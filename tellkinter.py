@@ -13,16 +13,9 @@ caminho_do_banco = os.path.join(pasta_banco, "estoque.db")
 conn = sqlite3.connect(caminho_do_banco)
 cursor = conn.cursor()
 cursor.execute('''
-CREATE TABLE IF NOT EXISTS equipamentos (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    nome TEXT NOT NULL,
-    categoria TEXT NOT NULL,
-    setor TEXT NOT NULL,
-    usuario TEXT NOT NULL,
-    componentes TEXT,
-    observacao TEXT
-)
-''')
+CREATE TABLE IF NOT EXISTS equipamentos (id INTEGER PRIMARY KEY AUTOINCREMENT,nome TEXT NOT NULL,
+    categoria TEXT NOT NULL, setor TEXT NOT NULL, usuario TEXT NOT NULL,
+               componentes TEXT, observacao TEXT)''')
 conn.commit()
 conn.close()
 
@@ -47,12 +40,10 @@ class Application():
     def tela_cadastro(self):
         #criação da janela cadastro
         self.janela_cadastro = Toplevel(self.root)
-        self.framecadastro = Frame(self.janela_cadastro, bd=4, bg='white', 
-                             highlightbackground='#107db2',
-                             highlightthickness=2)
-        self.framecadastro.place(relx= 0.001, rely= 0.001, relwidth= 1, relheight= 1)
+        self.framecadastro = Frame(self.janela_cadastro, bd=4, bg='white', highlightbackground='#98F5FF',highlightthickness=2)
+        self.framecadastro.place(relx= 0.15, rely= 0.05, relwidth= 0.58, relheight=0.80)
         self.janela_cadastro.title("CADASTRO DE EQUIPAMENTOS")
-        self.janela_cadastro.configure(background='white')
+        self.janela_cadastro.configure(background='#98F5FF')
         self.janela_cadastro.geometry(tamanho_tela_str)
         self.janela_cadastro.state('zoomed')
         self.janela_cadastro.maxsize(largura_tela, altura_tela)
@@ -63,40 +54,40 @@ class Application():
         #criação do conteudo da janela:
         #criando o campo nome
         self.lb_nome = Label(self.janela_cadastro, text='NOME',fg='black',font=("Arial", 10))
-        self.lb_nome.place(relx=0.2, rely=0.01)
+        self.lb_nome.place(relx=0.2, rely=0.2)
         self.nome_entry = Entry(self.janela_cadastro)
-        self.nome_entry.place(relx=0.30, rely=0.01, width=500)
+        self.nome_entry.place(relx=0.30, rely=0.2, width=500)
         #criando o campo setor
         self.lb_setor = Label(self.janela_cadastro, text='SETOR',fg='black',font=("Arial", 10))
-        self.lb_setor.place(relx=0.2, rely=0.1)
+        self.lb_setor.place(relx=0.2, rely=0.3)
         self.setor_entry = Entry(self.janela_cadastro)
-        self.setor_entry.place(relx=0.30, rely=0.1, width=500)
+        self.setor_entry.place(relx=0.30, rely=0.3, width=500)
         #criando o campo usuário:
         self.lb_usuario = Label(self.janela_cadastro, text='USUÁRIO',fg='black',font=("Arial", 10))
-        self.lb_usuario.place(relx=0.2, rely=0.2)
+        self.lb_usuario.place(relx=0.2, rely=0.4)
         self.usuario_entry = Entry(self.janela_cadastro)
-        self.usuario_entry.place(relx=0.30, rely=0.2, width=500)
+        self.usuario_entry.place(relx=0.30, rely=0.4, width=500)
         #criando o campo componentes
         self.lb_componente = Label(self.janela_cadastro, text='COMPONENTES',fg='black',font=("Arial", 10))
-        self.lb_componente.place(relx=0.2, rely=0.3)
+        self.lb_componente.place(relx=0.2, rely=0.5)
         self.componente_entry = Entry(self.janela_cadastro)
-        self.componente_entry.place(relx=0.30, rely=0.3, width=500)
+        self.componente_entry.place(relx=0.30, rely=0.5, width=500)
         #criando o campo categoria
         self.lb_categoria = Label(self.janela_cadastro, text='CATEGORIA',fg='black',font=("Arial", 10))
-        self.lb_categoria.place(relx=0.2, rely=0.4)
+        self.lb_categoria.place(relx=0.2, rely=0.6)
         self.categoria_entry = Entry(self.janela_cadastro)
-        self.categoria_entry.place(relx=0.30, rely=0.4, width=500)
+        self.categoria_entry.place(relx=0.30, rely=0.6, width=500)
         #criando o campo observações
         self.lb_obs = Label(self.janela_cadastro, text='OBSERVAÇÃO',fg='black',font=("Arial", 10))
-        self.lb_obs.place(relx=0.2, rely=0.5)
+        self.lb_obs.place(relx=0.2, rely=0.7)
         self.obs_entry = Entry(self.janela_cadastro)
-        self.obs_entry.place(relx=0.30, rely=0.5, width=500)
+        self.obs_entry.place(relx=0.30, rely=0.7, width=500)
         #criando o botão de cadastrar
         self.bt_cadastrar = Button(self.janela_cadastro, text='CADASTRAR', command=self.cadastrar, borderwidth=5, bg='#107db2', fg='white',font=("Arial", 10))
-        self.bt_cadastrar.place(relx= 0.7, rely= 0.9)
+        self.bt_cadastrar.place(relx= 0.5, rely= 0.77)
         #Botão para fechar a janela:
         self.bt_fechar = Button(self.janela_cadastro, text='CANCELAR',borderwidth=5,bg='#107db2',fg='white',font=("Arial", 10), command=self.janela_cadastro.destroy)
-        self.bt_fechar.place(relx= 0.1, rely= 0.9)
+        self.bt_fechar.place(relx= 0.4, rely= 0.77)
 
 
     #características da tela menú inicial
@@ -154,7 +145,7 @@ class Application():
     def tela_excluir(self):
         self.janela_excluir = Toplevel(self.root)
         self.janela_excluir.title('EXLCUIR EQUIPAMENTO')
-        self.janela_excluir.configure(background='white')
+        self.janela_excluir.configure(background='#98F5FF')
         self.janela_excluir.geometry(tamanho_tela_str)
         self.janela_excluir.state('zoomed')
         self.janela_excluir.maxsize(root.winfo_screenwidth(), root.winfo_screenheight())
@@ -230,7 +221,7 @@ class Application():
         # Criação da nova janela
         self.janela_alterar = Toplevel(self.root)
         self.janela_alterar.title("ALTERAR EQUIPAMENTO")
-        self.janela_alterar.configure(background='white')
+        self.janela_alterar.configure(background='#98F5FF')
         self.janela_alterar.geometry(tamanho_tela_str)
         self.janela_alterar.state('zoomed')
         self.janela_alterar.maxsize(root.winfo_screenwidth(), root.winfo_screenheight())
@@ -410,9 +401,7 @@ class Application():
     #criando a função para visualização dos dados no frame2
     def frame_de_tela(self):
         #Abaixo a criação do primeiro frame:
-        self.frame1 = Frame(self.root, bd=4, bg='white', 
-                             highlightbackground='#98F5FF',
-                             highlightthickness=2)
+        self.frame1 = Frame(self.root, bd=4, bg='white', highlightbackground='#98F5FF',highlightthickness=2)
         self.frame1.place(relx= 0.02, rely= 0.02, relwidth= 0.96, relheight=0.46)
         #Abaixo a criação do segundo frame:
         self.frame2 = Frame(self.root, bd=4, bg='white', 
