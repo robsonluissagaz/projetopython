@@ -63,7 +63,7 @@ class Application():
 
 
     def carregar_imagem(self):
-            caminho_imagem = "C:/Users/Usuário/Documents/tellkinter/projetopython/sagaztec.png"
+            caminho_imagem = "sagaztec.png"
             imagem = Image.open(caminho_imagem)
             self.imagem_tk = ImageTk.PhotoImage(imagem)
             rotulo_imagem = tk.Label(self.root, image=self.imagem_tk)
@@ -409,9 +409,9 @@ class Application():
         self.janela_excluir.configure(background='#107db2')
         self.janela_excluir.geometry(tamanho_tela_str)
         self.janela_excluir.state('zoomed')
-        self.janela_excluir.maxsize(root.winfo_screenwidth(), root.winfo_screenheight())
+        self.janela_excluir.maxsize(width=largura_tela, height=altura_tela)
         self.janela_excluir.minsize(width=largura_tela, height=altura_tela)
-        self.janela_excluir.resizable(TRUE, TRUE)
+        self.janela_excluir.resizable(True, True)
         self.janela_excluir.grab_set()
         #treeview
         self.lista_excluir = ttk.Treeview(self.janela_excluir, height=25, columns=('col1', 'col2'))
@@ -503,7 +503,7 @@ class Application():
         self.janela_alterar.state('zoomed')
         self.janela_alterar.maxsize(root.winfo_screenwidth(), root.winfo_screenheight())
         self.janela_alterar.minsize(width=largura_tela, height=altura_tela)
-        self.janela_alterar.resizable(TRUE, TRUE)
+        self.janela_alterar.resizable(True, True)
         # Tornar outras janelas não interativas
         self.janela_alterar.grab_set()
         #imagem
@@ -562,21 +562,24 @@ class Application():
 
 
     def carregar_dados_alteracao(self):
-        """Carrega os dados dos equipamentos para a janela de alteração."""
-        # Limpar o Treeview
-        for item in self.lista_alterar.get_children():
-            self.lista_alterar.delete(item)
-        # Conectar ao banco de dados e buscar os dados
-        conn = sqlite3.connect(os.path.join(os.path.expanduser("~"), "Documents", "Estoque_TI", "estoque.db"))
-        cursor = conn.cursor()
-        cursor.execute("SELECT id, nome, setor,usuario, componentes, categoria, key, observacao  FROM equipamentos")
-        registros = cursor.fetchall()
-        # Inserir os dados na Treeview
-        for registro in registros:
-            self.lista_alterar.insert("", "end", values=registro)
-        conn.close()
-        self.lb_alterar_id_entry.delete(0, END)
-        self.lb_alterar_nome_entry.delete(0, END)
+        try:
+            """Carrega os dados dos equipamentos para a janela de alteração."""
+            # Limpar o Treeview
+            for item in self.lista_alterar.get_children():
+                self.lista_alterar.delete(item)
+            # Conectar ao banco de dados e buscar os dados
+            conn = sqlite3.connect(os.path.join(os.path.expanduser("~"), "Documents", "Estoque_TI", "estoque.db"))
+            cursor = conn.cursor()
+            cursor.execute("SELECT *  FROM equipamentos")
+            registros = cursor.fetchall()
+            # Inserir os dados na Treeview
+            for registro in registros:
+                self.lista_alterar.insert("", "end", values=registro)
+            conn.close()
+            self.lb_alterar_id_entry.delete(0, END)
+            self.lb_alterar_nome_entry.delete(0, END)
+        except:
+            messagebox('Nenhum equipamento cadastrado')
 
 
     def carregar_dados_exclusao(self):
@@ -806,7 +809,7 @@ class Application():
         self.frame1.place(relx= 0.02, rely= 0.02, relwidth= 0.96, relheight=0.46)
         #imagem
         rotulo_imagem_inicial = tk.Label(self.root, image=self.imagem_tk)
-        rotulo_imagem_inicial.place(relx=0.70, rely=0.04)
+        rotulo_imagem_inicial.place(relx=0.30, rely=0.40)
         #Abaixo a criação do segundo frame:
         self.frame2 = Frame(self.root, bd=4, bg='white', 
                              highlightbackground='#98F5FF',
