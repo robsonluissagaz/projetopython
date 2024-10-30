@@ -165,6 +165,9 @@ class Application():
         self.carregar_dados_fiscal()
 
 
+    def tela_visualizar_nota(self):
+        
+
     def tela_remover_nota(self):
         #criação da janela cadastrar nota
         self.janela_fiscal_remover = Toplevel(self.root)
