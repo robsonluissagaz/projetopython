@@ -55,19 +55,19 @@ class Application():
     def __init__(self):
         self.root = root
         self.tela()
-        self.carregar_imagem()
         self.frame_de_tela()
         self.widgets_frame1()
         self.lista_frame2()
+        self.carregar_imagem()
         root.mainloop()
 
 
     def carregar_imagem(self):
-            caminho_imagem = "C:/Users/Usuário/Documents/tellkinter/projetopython/sagaztec.png"
+            caminho_imagem = "sagaztec.png"
             imagem = Image.open(caminho_imagem)
             self.imagem_tk = ImageTk.PhotoImage(imagem)
             rotulo_imagem = tk.Label(self.root, image=self.imagem_tk)
-            rotulo_imagem.pack()
+            rotulo_imagem.place(relx=0.82, rely=0.04)
 
 
     def tela_nota_fiscal(self):
@@ -82,6 +82,9 @@ class Application():
         self.janela_fiscal.resizable(True, True)
         #tornando outras janelas não interativas
         self.janela_fiscal.grab_set()
+        #imagem
+        rotulo_imagem_alterar = tk.Label(self.janela_fiscal, image=self.imagem_tk)
+        rotulo_imagem_alterar.place(relx=0.82, rely=0.04)
         #Botões
         self.bt_fiscal_cadastrar = Button(self.janela_fiscal, text='CADASTRAR NOVA NOTA', borderwidth=5, bg='#107db2',
                                 fg='white',font=("Arial", 10), command=self.tela_cadastrar_nota)
@@ -95,6 +98,7 @@ class Application():
 
 
     def tela_cadastrar_nota(self):
+        self.janela_fiscal.destroy()
         #criação da janela cadastrar nota
         self.janela_fiscal_cadastrar = Toplevel(self.root)
         self.janela_fiscal_cadastrar.title("Sagaz TEC // CADASTRO DE NOTA")
@@ -106,6 +110,9 @@ class Application():
         self.janela_fiscal_cadastrar.resizable(True, True)
         #tornando outras janelas não interativas
         self.janela_fiscal_cadastrar.grab_set()
+        #imagem
+        rotulo_imagem_alterar = tk.Label(self.janela_fiscal_cadastrar, image=self.imagem_tk)
+        rotulo_imagem_alterar.place(relx=0.82, rely=0.04)
         # Treeview
         self.lista_excluir_nota = ttk.Treeview(self.janela_fiscal_cadastrar, height=25, columns=('col1', 'col2'))
         self.lista_excluir_nota.place(relx= 0.40, rely= 0.09)
@@ -145,6 +152,16 @@ class Application():
         bt_reseta_treeview_excluir = Button(self.janela_fiscal_cadastrar, text="RESETAR PESQUISA",
                                   bg='red', fg='white', borderwidth=5, font=("Arial", 10), command=self.carregar_dados_fiscal)
         bt_reseta_treeview_excluir.place(relx=0.26, rely=0.50)
+        #botão Cadastrar nota selecionado
+        bt_nota_selecionado = Button(self.janela_fiscal_cadastrar, text="CADASTRAR NOTA",
+                                        borderwidth=5,bg='#107db2',fg='white',font=("Arial", 10),
+                                        command=self.cadastrar_nota)
+        bt_nota_selecionado.place(relx=0.53, rely=0.90)
+        #Botão concelar
+        bt_cancelar = Button(self.janela_fiscal_cadastrar, text="CANCELAR",borderwidth=5,
+                             bg='red',fg='white', font=("Arial", 10),
+                             command=self.janela_fiscal_cadastrar.destroy)
+        bt_cancelar.place(relx=0.42, rely=0.90)
         self.carregar_dados_fiscal()
 
 
@@ -160,6 +177,9 @@ class Application():
         self.janela_fiscal_remover.resizable(True, True)
         #tornando outras janelas não interativas
         self.janela_fiscal_remover.grab_set()
+        #imagem
+        rotulo_imagem_alterar = tk.Label(self.janela_fiscal_remover, image=self.imagem_tk)
+        rotulo_imagem_alterar.place(relx=0.82, rely=0.04)
         #treeview
         self.lista_excluir_nota = ttk.Treeview(self.janela_fiscal_remover, height=25, columns=('col1', 'col2'))
         self.lista_excluir_nota.place(relx= 0.40, rely= 0.09)
@@ -265,20 +285,39 @@ class Application():
         conn.close()
 
 
-    def mover_arquivo(self):
-        arquivo_origem = filedialog.askopenfilename(title="Selecione um arquivo")
+
+    def cadastrar_nota(self):
+        # Obtém o item selecionado na Treeview
+        item_selecionado = self.lista_excluir_nota.focus()
+        if not item_selecionado:
+            messagebox.showwarning("Atenção", "Selecione um equipamento na lista para cadastrar a nota fiscal.")
+            return
+        # Obtém o ID do equipamento a partir do item selecionado
+        equipamento_id = self.lista_excluir_nota.item(item_selecionado, 'values')[0]
+        # Abre o gerenciador de arquivos para selecionar o arquivo PDF
+        arquivo_origem = filedialog.askopenfilename(title="Selecione uma nota fiscal (PDF)", filetypes=[("PDF files", "*.pdf")])
         if not arquivo_origem:
             return
-        pasta_destino = pasta_banco
+        # Define o caminho de destino para mover o PDF
+        pasta_destino = pasta_banco  # Ajuste `pasta_banco` com o caminho específico da sua pasta de notas fiscais
+        arquivo_destino = os.path.join(pasta_destino, os.path.basename(arquivo_origem))
         try:
-            shutil.move(arquivo_origem, pasta_destino)
-            messagebox.showinfo("Sucesso", "Arquivo movido com sucesso!")
+            # Move o arquivo para a pasta de notas fiscais
+            shutil.move(arquivo_origem, arquivo_destino)
+            # Conecta ao banco de dados e insere o registro na tabela de notas fiscais
+            conn = sqlite3.connect(caminho_notas_fiscais)
+            cursor = conn.cursor()
+            cursor.execute('''
+                INSERT INTO notas (equipamento_id, caminho) 
+                VALUES (?, ?)
+            ''', (equipamento_id, arquivo_destino))
+            conn.commit()
+            conn.close()
+            messagebox.showinfo("Sucesso", "Nota fiscal cadastrada com sucesso!")
+            self.janela_fiscal_cadastrar.destroy()
+            self.tela_nota_fiscal()
         except Exception as e:
-            messagebox.showerror("Erro", f"Ocorreu um erro ao mover o arquivo: {e}")
-
-
-
-    #def cadastrar_nota(self):
+            messagebox.showerror("Erro", f"Ocorreu um erro ao cadastrar a nota fiscal: {e}")
 
 
     def tela_cadastro(self):
@@ -295,6 +334,9 @@ class Application():
         self.janela_cadastro.resizable(True, True)
         #tornando outras janelas não interativas
         self.janela_cadastro.grab_set()
+        #imagem
+        rotulo_imagem_alterar = tk.Label(self.janela_cadastro, image=self.imagem_tk)
+        rotulo_imagem_alterar.place(relx=0.82, rely=0.04)
         #criação do conteudo da janela:
         #criando o campo nome
         self.lb_nome = Label(self.janela_cadastro, text='NOME',fg='black',font=("Arial", 10))
@@ -339,14 +381,15 @@ class Application():
                                                 highlightcolor='#107db2', highlightthickness=2)
         self.obs_entry.place(relx=0.30, rely=0.75, width=500)
         #criando o botão de cadastrar
-        self.bt_cadastrar = Button(self.janela_cadastro, text='CADASTRAR', command=self.cadastrar,
-                                   borderwidth=5, bg='#107db2', fg='white',font=("Arial", 10))
+        self.bt_cadastrar = Button(self.janela_cadastro, text='CADASTRAR',
+                                   borderwidth=5, bg='#107db2', fg='white',
+                                   font=("Arial", 10), command=self.cadastrar)
         self.bt_cadastrar.place(relx= 0.57, rely= 0.82)
         #Botão para fechar a janela:
         self.bt_fechar = Button(self.janela_cadastro, text='CANCELAR', borderwidth=5, bg='red',
                                 fg='white',font=("Arial", 10), command=self.janela_cadastro.destroy)
         self.bt_fechar.place(relx= 0.32, rely= 0.82)
-        
+
 
     #características da tela menú inicial
     def tela(self):
@@ -413,6 +456,9 @@ class Application():
         self.janela_excluir.minsize(width=largura_tela, height=altura_tela)
         self.janela_excluir.resizable(TRUE, TRUE)
         self.janela_excluir.grab_set()
+        #imagem
+        rotulo_imagem_alterar = tk.Label(self.janela_excluir, image=self.imagem_tk)
+        rotulo_imagem_alterar.place(relx=0.82, rely=0.04)
         #treeview
         self.lista_excluir = ttk.Treeview(self.janela_excluir, height=25, columns=('col1', 'col2'))
         self.lista_excluir.place(relx= 0.40, rely= 0.09)
@@ -508,7 +554,7 @@ class Application():
         self.janela_alterar.grab_set()
         #imagem
         rotulo_imagem_alterar = tk.Label(self.janela_alterar, image=self.imagem_tk)
-        rotulo_imagem_alterar.place(relx=0.70, rely=0.04)
+        rotulo_imagem_alterar.place(relx=0.82, rely=0.04)
         #label pesquisa id
         self.lb_alterar_id = Label(self.janela_alterar, text='PESQUISA ID',font=("Arial", 10))
         self.lb_alterar_id.place(relx=0.04, rely=0.29)
@@ -700,6 +746,9 @@ class Application():
         self.janela_editar.maxsize(root.winfo_screenwidth(), root.winfo_screenheight())
         self.janela_editar.minsize(width=largura_tela, height=altura_tela)
         self.janela_editar.grab_set()
+        #imagem
+        rotulo_imagem_alterar = tk.Label(self.janela_editar, image=self.imagem_tk)
+        rotulo_imagem_alterar.place(relx=0.82, rely=0.04)
         #frame
         self.frame_editar = Frame(self.janela_editar, bd=4, bg='white', 
                                   highlightbackground='#98F5FF',highlightthickness=2)
@@ -805,8 +854,8 @@ class Application():
         self.frame1 = Frame(self.root, bd=4, bg='white', highlightbackground='#98F5FF',highlightthickness=2)
         self.frame1.place(relx= 0.02, rely= 0.02, relwidth= 0.96, relheight=0.46)
         #imagem
-        rotulo_imagem_inicial = tk.Label(self.root, image=self.imagem_tk)
-        rotulo_imagem_inicial.place(relx=0.70, rely=0.04)
+        #rotulo_imagem_inicial = tk.Label(self.root, image=self.imagem_tk)
+        #rotulo_imagem_inicial.place(relx=0.70, rely=0.04)
         #Abaixo a criação do segundo frame:
         self.frame2 = Frame(self.root, bd=4, bg='white', 
                              highlightbackground='#98F5FF',
