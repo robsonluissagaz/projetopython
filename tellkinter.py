@@ -62,43 +62,73 @@ class Application():
         root.mainloop()
 
 
+    def cancelar(self, janela_atual, janela_destino):
+        janela_atual.destroy()
+        janela_destino.lift()
+        janela_destino.grab_set()
+
+
     def carregar_imagem(self):
             caminho_imagem = "sagaztec.png"
             imagem = Image.open(caminho_imagem)
             self.imagem_tk = ImageTk.PhotoImage(imagem)
             rotulo_imagem = tk.Label(self.root, image=self.imagem_tk)
             rotulo_imagem.place(relx=0.82, rely=0.04)
+    
+
+    def abrir_nota(self):
+        nota_selecionada = self.lista_cad_nota.selection()
+        if not nota_selecionada:
+            messagebox.showwarning("Atenção", "Selecione um equipamento para visualizar suas notas fiscais.")
+            return
+        caminho_nota = self.lista_cad_nota.item(nota_selecionada, "values")[1]
+        if os.path.exists(caminho_nota):
+            os.startfile(caminho_nota)
+        else:
+            messagebox.showerror("Erro", "Arquivo não encontrado. Verifique se o caminho está correto.")
+
 
 
     def tela_nota_fiscal(self):
-        #criação da janela fiscal
-        self.janela_fiscal = Toplevel(self.root)
-        self.janela_fiscal.title("Sagaz TEC // NOTA FISCAL")
-        self.janela_fiscal.configure(background='#107db2')
-        self.janela_fiscal.geometry(tamanho_tela_str)
-        self.janela_fiscal.state('zoomed')
-        self.janela_fiscal.maxsize(largura_tela, altura_tela)
-        self.janela_fiscal.minsize(altura_tela, largura_tela)
-        self.janela_fiscal.resizable(True, True)
-        #tornando outras janelas não interativas
-        self.janela_fiscal.grab_set()
-        #imagem
-        rotulo_imagem_alterar = tk.Label(self.janela_fiscal, image=self.imagem_tk)
-        rotulo_imagem_alterar.place(relx=0.82, rely=0.04)
-        #Botões
-        self.bt_fiscal_cadastrar = Button(self.janela_fiscal, text='CADASTRAR NOVA NOTA', borderwidth=5, bg='#107db2',
-                                fg='white',font=("Arial", 10), command=self.tela_cadastrar_nota)
-        self.bt_fiscal_cadastrar.place(relx=0.40, rely=0.30)
-        self.bt_fiscal_excluir = Button(self.janela_fiscal, text='EXCLUIR NOTA', borderwidth=5, bg='#107db2',
-                                fg='white',font=("Arial", 10), command=self.tela_remover_nota)
-        self.bt_fiscal_excluir.place(relx=0.42, rely=0.40)
-        self.bt_fiscal_cancelar = Button(self.janela_fiscal, text='CANCELAR', borderwidth=5, bg='red',
-                                fg='white',font=("Arial", 10), command=self.janela_fiscal.destroy)
-        self.bt_fiscal_cancelar.place(relx=0.43, rely=0.50)
+        if not hasattr(self, 'janela_fiscal') or not self.janela_fiscal.winfo_exists():
+            #criação da janela fiscal
+            self.janela_fiscal = Toplevel(self.root)
+            self.janela_fiscal.title("Sagaz TEC // NOTA FISCAL")
+            self.janela_fiscal.configure(background='#107db2')
+            self.janela_fiscal.geometry(tamanho_tela_str)
+            self.janela_fiscal.state('zoomed')
+            self.janela_fiscal.maxsize(largura_tela, altura_tela)
+            self.janela_fiscal.minsize(altura_tela, largura_tela)
+            self.janela_fiscal.resizable(True, True)
+            #tornando outras janelas não interativas
+            self.janela_fiscal.grab_set()
+            #imagem
+            rotulo_imagem_alterar = tk.Label(self.janela_fiscal, image=self.imagem_tk)
+            rotulo_imagem_alterar.place(relx=0.82, rely=0.04)
+            #Botões
+            #Cadastrar
+            self.bt_fiscal_cadastrar = Button(self.janela_fiscal, text='CADASTRAR NOVA NOTA', borderwidth=5,
+                                            bg='#107db2',fg='white',font=("Arial", 10),
+                                            command=self.tela_cadastrar_nota)
+            self.bt_fiscal_cadastrar.place(relx=0.40, rely=0.20)
+            #Visualizar
+            self.bt_fiscal_visualizar_nota = Button(self.janela_fiscal, text='VISUALIZAR NOTAS', borderwidth=5,
+                                            bg='#107db2',fg='white',font=("Arial", 10),
+                                            command=self.tela_visualizar_nota)
+            self.bt_fiscal_visualizar_nota.place(relx=0.41, rely=0.30)
+            #Excluir
+            self.bt_fiscal_excluir = Button(self.janela_fiscal, text='EXCLUIR NOTA', borderwidth=5, bg='#107db2',
+                                    fg='white',font=("Arial", 10), command=self.tela_remover_nota)
+            self.bt_fiscal_excluir.place(relx=0.42, rely=0.40)
+            #cancelar
+            self.bt_fiscal_cancelar = Button(self.janela_fiscal, text='CANCELAR', borderwidth=5, bg='red',
+                                    fg='white',font=("Arial", 10), command=self.janela_fiscal.destroy)
+            self.bt_fiscal_cancelar.place(relx=0.43, rely=0.50)
+        else:
+            self.janela_fiscal.lift()
 
 
     def tela_cadastrar_nota(self):
-        self.janela_fiscal.destroy()
         #criação da janela cadastrar nota
         self.janela_fiscal_cadastrar = Toplevel(self.root)
         self.janela_fiscal_cadastrar.title("Sagaz TEC // CADASTRO DE NOTA")
@@ -160,12 +190,129 @@ class Application():
         #Botão concelar
         bt_cancelar = Button(self.janela_fiscal_cadastrar, text="CANCELAR",borderwidth=5,
                              bg='red',fg='white', font=("Arial", 10),
-                             command=self.janela_fiscal_cadastrar.destroy)
+                             command=lambda:self.cancelar(self.janela_fiscal_cadastrar, self.janela_fiscal))
         bt_cancelar.place(relx=0.42, rely=0.90)
         self.carregar_dados_fiscal()
 
 
+    def tela_notas_cadastradas(self):
+        self.janela_fiscal_cad = Toplevel(self.root)
+        self.janela_fiscal_cad.title("Sagaz TEC // NOTAS CADASTRADAS")
+        self.janela_fiscal_cad.configure(background='#107db2')
+        self.janela_fiscal_cad.geometry(tamanho_tela_str)
+        self.janela_fiscal_cad.state('zoomed')
+        self.janela_fiscal_cad.maxsize(largura_tela, altura_tela)
+        self.janela_fiscal_cad.minsize(altura_tela, largura_tela)
+        self.janela_fiscal_cad.resizable(True, True)
+        #tornando outras janelas não interativas
+        self.janela_fiscal_cad.grab_set()
+        #imagem
+        rotulo_imagem_cad = tk.Label(self.janela_fiscal_cad, image=self.imagem_tk)
+        rotulo_imagem_cad.place(relx=0.82, rely=0.04)
+        #treeview
+        self.lista_cad_nota = ttk.Treeview(self.janela_fiscal_cad, height=25, columns=('col1', 'col2'))
+        self.lista_cad_nota.place(relx= 0.40, rely= 0.09)
+        self.lista_cad_nota.heading('#0', text='')
+        self.lista_cad_nota.heading('#1', text='ID')
+        self.lista_cad_nota.heading('#2', text='Nota')
+        self.lista_cad_nota.column('#0', width=1)
+        self.lista_cad_nota.column('#1', width=30)
+        self.lista_cad_nota.column('#2', width=400)
+        #scrollbar da treeview
+        scroll_cad_nota = Scrollbar(self.janela_fiscal_cad, orient='vertical', command=self.lista_cad_nota.yview)
+        self.lista_cad_nota.configure(yscrollcommand=scroll_cad_nota.set)
+        scroll_cad_nota.place(relx=0.65, rely=0.09, relwidth=0.02, relheight=0.75)
+        #botoes
+        self.bt_abrir_nota = Button(self.janela_fiscal_cad, text='ABRIR NOTA',borderwidth=5,bg='#107db2',fg='white',
+                                 font=("Arial", 10), command=self.abrir_nota)
+        self.bt_abrir_nota.place(relx=0.30, rely=0.90)
+        self.carregar_dados_notas()
+        
+
     def tela_visualizar_nota(self):
+        self.janela_fiscal_visualizar = Toplevel(self.root)
+        self.janela_fiscal_visualizar.title("Sagaz TEC // VISUALIZAÇÃO DE NOTAS")
+        self.janela_fiscal_visualizar.configure(background='#107db2')
+        self.janela_fiscal_visualizar.geometry(tamanho_tela_str)
+        self.janela_fiscal_visualizar.state('zoomed')
+        self.janela_fiscal_visualizar.maxsize(largura_tela, altura_tela)
+        self.janela_fiscal_visualizar.minsize(altura_tela, largura_tela)
+        self.janela_fiscal_visualizar.resizable(True, True)
+        #tornando outras janelas não interativas
+        self.janela_fiscal_visualizar.grab_set()
+        #imagem
+        rotulo_imagem_alterar = tk.Label(self.janela_fiscal_visualizar, image=self.imagem_tk)
+        rotulo_imagem_alterar.place(relx=0.82, rely=0.04)
+        #treeview
+        self.lista_excluir_nota = ttk.Treeview(self.janela_fiscal_visualizar, height=25, columns=('col1', 'col2'))
+        self.lista_excluir_nota.place(relx= 0.40, rely= 0.09)
+        self.lista_excluir_nota.heading('#0', text='')
+        self.lista_excluir_nota.heading('#1', text='ID')
+        self.lista_excluir_nota.heading('#2', text='Nome Equipamento')
+        self.lista_excluir_nota.column('#0', width=1)
+        self.lista_excluir_nota.column('#1', width=30)
+        self.lista_excluir_nota.column('#2', width=300)
+        #scrollbar da treeview
+        scroll_excluir_nota = Scrollbar(self.janela_fiscal_visualizar, orient='vertical', command=self.lista_excluir_nota.yview)
+        self.lista_excluir_nota.configure(yscrollcommand=scroll_excluir_nota.set)
+        scroll_excluir_nota.place(relx=0.65, rely=0.09, relwidth=0.02, relheight=0.75)
+        #label pesquisa id
+        self.lb_excluir_id = Label(self.janela_fiscal_visualizar, text='PESQUISA ID',font=("Arial", 10))
+        self.lb_excluir_id.place(relx=0.04, rely=0.29)
+        #campo pesquisa id
+        self.excluir_id_entry = Entry(self.janela_fiscal_visualizar, bd=4, highlightbackground='#98F5FF', 
+                                                highlightcolor='#98F5FF', highlightthickness=3)
+        self.excluir_id_entry.place(relx=0.11, rely=0.29, width=200)
+        #botão pesquisa id
+        bt_pesquisa_id = Button(self.janela_fiscal_visualizar, text="PESQUISAR ID",borderwidth=5,bg='#107db2',fg='white',
+                                 font=("Arial", 10), command=self.pesquisa_id_excluir_notas)
+        bt_pesquisa_id.place(relx=0.26, rely=0.29)
+        #label pesquisa nome
+        self.lb_excluir_nome = Label(self.janela_fiscal_visualizar, text='PESQUISA NOME',font=("Arial", 10))
+        self.lb_excluir_nome.place(relx=0.02, rely=0.40)
+        #campo pesquisa nome
+        self.excluir_nome_entry = Entry(self.janela_fiscal_visualizar, bd=4, highlightbackground='#98F5FF', 
+                                                highlightcolor='#98F5FF', highlightthickness=3)
+        self.excluir_nome_entry.place(relx=0.11, rely=0.40, width=200)
+        #botão pesquisa nome
+        bt_pesquisa_nome = Button(self.janela_fiscal_visualizar,text="PESQUISAR NOME",borderwidth=5,bg='#107db2',fg='white',
+                                 font=("Arial", 10),command=self.pesquisa_nome_excluir_notas)
+        bt_pesquisa_nome.place(relx=0.26, rely=0.40)
+        #Botão resetar treeview
+        bt_reseta_treeview_excluir = Button(self.janela_fiscal_visualizar, text="RESETAR PESQUISA",
+                                  bg='red', fg='white', borderwidth=5, font=("Arial", 10), command=self.carregar_dados_fiscal)
+        bt_reseta_treeview_excluir.place(relx=0.26, rely=0.50)
+        #botão excluir selecionado
+        bt_excluir_selecionado = Button(self.janela_fiscal_visualizar, text="SELECIONAR",borderwidth=5,bg='#107db2',fg='white',
+                                 font=("Arial", 10), command=self.tela_notas_cadastradas)
+        bt_excluir_selecionado.place(relx=0.53, rely=0.90)
+        #botão cancelar
+        bt_cancelar = Button(self.janela_fiscal_visualizar, text="CANCELAR",borderwidth=5, bg='red',fg='white',
+                                 font=("Arial", 10), command=lambda:self.cancelar(self.janela_fiscal_visualizar, self.janela_fiscal))
+        bt_cancelar.place(relx=0.42, rely=0.90)
+        self.carregar_dados_fiscal()
+
+
+    def carregar_dados_notas(self):
+        # Verifica se há um item selecionado na Treeview
+        selected_item = self.lista_excluir_nota.selection()
+        if not selected_item:
+            messagebox.showwarning("Atenção", "Selecione um equipamento para visualizar suas notas fiscais.")
+            return
+        # Obtém o ID do equipamento selecionado
+        equipamento_id = self.lista_excluir_nota.item(selected_item, "values")[0]
+        # Consulta o banco de dados para obter as notas fiscais associadas a este equipamento
+        conn = sqlite3.connect(caminho_notas_fiscais)
+        cursor = conn.cursor()
+        cursor.execute("SELECT id, caminho FROM notas WHERE equipamento_id = ?", (equipamento_id,))
+        notas = cursor.fetchall()
+        conn.close()
+        # Verifica se há notas fiscais para o equipamento
+        if not notas:
+            messagebox.showinfo("Informação", "Não há notas fiscais vinculadas a este equipamento.")
+            return
+        for nota in notas:
+            self.lista_cad_nota.insert("", "end", values=nota)
         
 
     def tela_remover_nota(self):
