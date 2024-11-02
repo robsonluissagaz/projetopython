@@ -211,7 +211,7 @@ class Application():
         rotulo_imagem_cad.place(relx=0.82, rely=0.04)
         #treeview
         self.lista_cad_nota = ttk.Treeview(self.janela_fiscal_cad, height=25, columns=('col1', 'col2'))
-        self.lista_cad_nota.place(relx= 0.40, rely= 0.09)
+        self.lista_cad_nota.place(relx= 0.30, rely= 0.09)
         self.lista_cad_nota.heading('#0', text='')
         self.lista_cad_nota.heading('#1', text='ID')
         self.lista_cad_nota.heading('#2', text='Nota')
@@ -221,11 +221,17 @@ class Application():
         #scrollbar da treeview
         scroll_cad_nota = Scrollbar(self.janela_fiscal_cad, orient='vertical', command=self.lista_cad_nota.yview)
         self.lista_cad_nota.configure(yscrollcommand=scroll_cad_nota.set)
-        scroll_cad_nota.place(relx=0.65, rely=0.09, relwidth=0.02, relheight=0.75)
+        scroll_cad_nota.place(relx=0.64, rely=0.11, relwidth=0.02, relheight=0.75)
         #botoes
-        self.bt_abrir_nota = Button(self.janela_fiscal_cad, text='ABRIR NOTA',borderwidth=5,bg='#107db2',fg='white',
-                                 font=("Arial", 10), command=self.abrir_nota)
-        self.bt_abrir_nota.place(relx=0.30, rely=0.90)
+        #Abrir Notas
+        self.bt_abrir_nota = Button(self.janela_fiscal_cad, text='ABRIR NOTA',borderwidth=5,
+                                bg='#107db2',fg='white', font=("Arial", 10), command=self.abrir_nota)
+        self.bt_abrir_nota.place(relx=0.48, rely=0.92)
+        #Cancelar
+        self.bt_abrir_nota = Button(self.janela_fiscal_cad, text='CANCELAR',borderwidth=5,
+                                bg='red',fg='white',font=("Arial", 10),
+                                command=lambda:self.cancelar(self.janela_fiscal_cad,self.janela_fiscal_visualizar))
+        self.bt_abrir_nota.place(relx=0.35, rely=0.92)
         self.carregar_dados_notas()
         
 
@@ -651,11 +657,11 @@ class Application():
         #botão excluir selecionado
         bt_excluir_selecionado = Button(self.janela_excluir, text="EXCLUIR SELECIONADO",borderwidth=5,bg='#107db2',fg='white',
                                  font=("Arial", 10), command=self.excluir)
-        bt_excluir_selecionado.place(relx=0.53, rely=0.90)
+        bt_excluir_selecionado.place(relx=0.51, rely=0.92)
         #botão cancelar
         bt_cancelar = Button(self.janela_excluir, text="CANCELAR",borderwidth=5, bg='red',fg='white',
                                  font=("Arial", 10), command=self.janela_excluir.destroy)
-        bt_cancelar.place(relx=0.40, rely=0.90)
+        bt_cancelar.place(relx=0.41, rely=0.92)
         self.carregar_dados_exclusao()
 
 
@@ -745,16 +751,16 @@ class Application():
         # Adicionar barra de rolagem
         scroll_alterar = Scrollbar(self.janela_alterar, orient='vertical', command=self.lista_alterar.yview)
         self.lista_alterar.configure(yscrollcommand=scroll_alterar.set)
-        scroll_alterar.place(relx=0.62, rely=0.03, relwidth=0.02, relheight=0.74)
+        scroll_alterar.place(relx=0.62, rely=0.05, relwidth=0.02, relheight=0.74)
         # Carregar dados na Treeview
         self.carregar_dados_alteracao()
         # Botão para abrir a janela de edição
         bt_editar = Button(self.janela_alterar, text="EDITAR SELECIONADO", bg='#107db2', fg='white',
                            borderwidth=5, font=('Arial',10), command=self.editar_equipamento)
-        bt_editar.place(relx=0.50, rely=0.80)
+        bt_editar.place(relx=0.48, rely=0.86)
         bt_cancelar = Button(self.janela_alterar, text="CANCELAR", bg='red', fg='white',
                              borderwidth=5, font=('Arial',10), command=self.janela_alterar.destroy)
-        bt_cancelar.place(relx=0.41, rely=0.80)
+        bt_cancelar.place(relx=0.39, rely=0.86)
 
 
     def carregar_dados_alteracao(self):
