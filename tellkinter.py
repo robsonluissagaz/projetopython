@@ -16,9 +16,6 @@ if not os.path.exists(pasta_banco):
 
 
 root = Tk()
-largura_tela = root.winfo_screenwidth()
-altura_tela = root.winfo_screenheight()
-tamanho_tela_str = f"{largura_tela}x{altura_tela}".replace(' ', '')
 
 
 #criando o arquivo do banco de dados
@@ -58,22 +55,13 @@ class Application():
         self.frame_de_tela()
         self.widgets_frame1()
         self.lista_frame2()
-        self.carregar_imagem()
         root.mainloop()
-
+    
 
     def cancelar(self, janela_atual, janela_destino):
         janela_atual.destroy()
         janela_destino.lift()
         janela_destino.grab_set()
-
-
-    def carregar_imagem(self):
-            caminho_imagem = "sagaztec.png"
-            imagem = Image.open(caminho_imagem)
-            self.imagem_tk = ImageTk.PhotoImage(imagem)
-            rotulo_imagem = tk.Label(self.root, image=self.imagem_tk)
-            rotulo_imagem.place(relx=0.82, rely=0.04)
     
 
     def abrir_nota(self):
@@ -90,6 +78,9 @@ class Application():
 
 
     def tela_nota_fiscal(self):
+        largura_tela = self.root.winfo_screenwidth()
+        altura_tela = self.root.winfo_screenheight()
+        tamanho_tela_str = f"{largura_tela}x{altura_tela}".replace(' ', '')
         if not hasattr(self, 'janela_fiscal') or not self.janela_fiscal.winfo_exists():
             #criação da janela fiscal
             self.janela_fiscal = Toplevel(self.root)
@@ -129,6 +120,9 @@ class Application():
 
 
     def tela_cadastrar_nota(self):
+        largura_tela = self.root.winfo_screenwidth()
+        altura_tela = self.root.winfo_screenheight()
+        tamanho_tela_str = f"{largura_tela}x{altura_tela}".replace(' ', '')
         #criação da janela cadastrar nota
         self.janela_fiscal_cadastrar = Toplevel(self.root)
         self.janela_fiscal_cadastrar.title("Sagaz TEC // CADASTRO DE NOTA")
@@ -196,6 +190,9 @@ class Application():
 
 
     def tela_notas_cadastradas(self):
+        largura_tela = self.root.winfo_screenwidth()
+        altura_tela = self.root.winfo_screenheight()
+        tamanho_tela_str = f"{largura_tela}x{altura_tela}".replace(' ', '')
         self.janela_fiscal_cad = Toplevel(self.root)
         self.janela_fiscal_cad.title("Sagaz TEC // NOTAS CADASTRADAS")
         self.janela_fiscal_cad.configure(background='#107db2')
@@ -236,6 +233,9 @@ class Application():
         
 
     def tela_visualizar_nota(self):
+        largura_tela = self.root.winfo_screenwidth()
+        altura_tela = self.root.winfo_screenheight()
+        tamanho_tela_str = f"{largura_tela}x{altura_tela}".replace(' ', '')
         self.janela_fiscal_visualizar = Toplevel(self.root)
         self.janela_fiscal_visualizar.title("Sagaz TEC // VISUALIZAÇÃO DE NOTAS")
         self.janela_fiscal_visualizar.configure(background='#107db2')
@@ -322,6 +322,9 @@ class Application():
         
 
     def tela_remover_nota(self):
+        largura_tela = self.root.winfo_screenwidth()
+        altura_tela = self.root.winfo_screenheight()
+        tamanho_tela_str = f"{largura_tela}x{altura_tela}".replace(' ', '')
         #criação da janela cadastrar nota
         self.janela_fiscal_remover = Toplevel(self.root)
         self.janela_fiscal_remover.title("Sagaz TEC // REMOVER NOTA")
@@ -477,6 +480,9 @@ class Application():
 
 
     def tela_cadastro(self):
+        largura_tela = self.root.winfo_screenwidth()
+        altura_tela = self.root.winfo_screenheight()
+        tamanho_tela_str = f"{largura_tela}x{altura_tela}".replace(' ', '')
         #criação da janela cadastro
         self.janela_cadastro = Toplevel(self.root)
         self.framecadastro = Frame(self.janela_cadastro, bd=4, bg='white', highlightbackground='#98F5FF',highlightthickness=2)
@@ -549,6 +555,9 @@ class Application():
 
     #características da tela menú inicial
     def tela(self):
+        largura_tela = self.root.winfo_screenwidth()
+        altura_tela = self.root.winfo_screenheight()
+        tamanho_tela_str = f"{largura_tela}x{altura_tela}".replace(' ', '')
         self.root.title("Sagaz TEC")
         self.root.configure(background='#107db2')
         self.root.geometry(tamanho_tela_str)
@@ -603,6 +612,9 @@ class Application():
 
 
     def tela_excluir(self):
+        largura_tela = self.root.winfo_screenwidth()
+        altura_tela = self.root.winfo_screenheight()
+        tamanho_tela_str = f"{largura_tela}x{altura_tela}".replace(' ', '')
         self.janela_excluir = Toplevel(self.root)
         self.janela_excluir.title('Sagaz TEC // EXLCUIR EQUIPAMENTO')
         self.janela_excluir.configure(background='#107db2')
@@ -696,7 +708,9 @@ class Application():
 
     #função para alterar na tela de cadastrar
     def alterar(self):
-        #Função que abre uma janela para listar e alterar os equipamentos cadastrados.
+        largura_tela = self.root.winfo_screenwidth()
+        altura_tela = self.root.winfo_screenheight()
+        tamanho_tela_str = f"{largura_tela}x{altura_tela}".replace(' ', '')
         # Criação da nova janela
         self.janela_alterar = Toplevel(self.root)
         self.janela_alterar.title("Sagaz TEC // ALTERAR EQUIPAMENTO")
@@ -705,41 +719,50 @@ class Application():
         self.janela_alterar.state('zoomed')
         self.janela_alterar.maxsize(root.winfo_screenwidth(), root.winfo_screenheight())
         self.janela_alterar.minsize(width=largura_tela, height=altura_tela)
-        self.janela_alterar.resizable(TRUE, TRUE)
+        self.janela_alterar.resizable(True, True)
         # Tornar outras janelas não interativas
         self.janela_alterar.grab_set()
+        #Frame da imagem
+        self.frame_imagem = Frame(self.janela_alterar, bg='#107db2')
+        self.frame_imagem.place(relx= 0.82, rely= 0.04, relwidth= 0.17, relheight=0.34)
         #imagem
-        rotulo_imagem_alterar = tk.Label(self.janela_alterar, image=self.imagem_tk)
-        rotulo_imagem_alterar.place(relx=0.82, rely=0.04)
+        rotulo_imagem_alterar = tk.Label(self.frame_imagem, image=self.imagem_tk)
+        rotulo_imagem_alterar.place(relx=0.02, rely=0.04)
+        #Frame pesquisa
+        self.frame_pesquisa = Frame(self.janela_alterar, bg='lightblue')
+        self.frame_pesquisa.place(relx= 0.05, rely= 0.10, relwidth= 0.30, relheight=0.70)
         #label pesquisa id
-        self.lb_alterar_id = Label(self.janela_alterar, text='PESQUISA ID',font=("Arial", 10))
-        self.lb_alterar_id.place(relx=0.04, rely=0.29)
+        self.lb_alterar_id = Label(self.frame_pesquisa, text='PESQUISA ID',font=("Arial", 10))
+        self.lb_alterar_id.pack(padx=10,pady=10)
         #campo pesquisa id
-        self.lb_alterar_id_entry = Entry(self.janela_alterar, bd=4, highlightbackground='#98F5FF', 
-                                                highlightcolor='#98F5FF', highlightthickness=3)
-        self.lb_alterar_id_entry.place(relx=0.11, rely=0.29, width=200)
+        self.lb_alterar_id_entry = Entry(self.frame_pesquisa, bd=4, highlightbackground='#98F5FF', 
+                                                highlightcolor='#98F5FF', highlightthickness=3, width=20)
+        self.lb_alterar_id_entry.pack(padx=10, pady=10)
         #botão pesquisa id
-        bt_pesquisa = Button(self.janela_alterar, text="PESQUISAR ID", 
+        bt_pesquisa = Button(self.frame_pesquisa, text="PESQUISAR ID", 
                              bg='#107db2',borderwidth=5, fg='white', font=('Arial',10), command=self.pesquisa_id_alterar)
-        bt_pesquisa.place(relx=0.26, rely=0.29)
+        bt_pesquisa.pack(padx=10,pady=10)
         #label pesquisa nome
-        self.lb_alterar_nome = Label(self.janela_alterar, text='PESQUISA NOME',font=("Arial", 10))
-        self.lb_alterar_nome.place(relx=0.02, rely=0.40)
+        self.lb_alterar_nome = Label(self.frame_pesquisa, text='PESQUISA NOME',font=("Arial", 10))
+        self.lb_alterar_nome.pack(padx=10, pady=10)
         #campo pesquisa nome
-        self.lb_alterar_nome_entry = Entry(self.janela_alterar, bd=4, highlightbackground='#98F5FF', 
-                                                highlightcolor='#98F5FF', highlightthickness=3)
-        self.lb_alterar_nome_entry.place(relx=0.11, rely=0.40, width=200)
+        self.lb_alterar_nome_entry = Entry(self.frame_pesquisa, bd=4, highlightbackground='#98F5FF',
+                                           highlightcolor='#98F5FF', highlightthickness=3, width=30)
+        self.lb_alterar_nome_entry.pack(padx=10,pady=10)
         #botão pesquisa nome
-        bt_pesquisa_alterar_nome = Button(self.janela_alterar,text="PESQUISAR NOME",
+        bt_pesquisa_alterar_nome = Button(self.frame_pesquisa,text="PESQUISAR NOME",
                                   bg='#107db2',fg='white',borderwidth=5, font=('Arial',10), command=self.pesquisa_nome_alterar)
-        bt_pesquisa_alterar_nome.place(relx=0.26, rely=0.40)
+        bt_pesquisa_alterar_nome.pack(padx=10,pady=10)
         #Botão para resetar a treeview
-        bt_reseta_treeview = Button(self.janela_alterar,text="RESETAR PESQUISA",
+        bt_reseta_treeview = Button(self.frame_pesquisa,text="RESETAR PESQUISA",
                                   bg='red',fg='white',borderwidth=5, font=('Arial',10), command=self.carregar_dados_alteracao)
-        bt_reseta_treeview.place(relx=0.26, rely=0.50)
+        bt_reseta_treeview.pack(padx=40,pady=40)
+        #frame_treeview
+        self.frame_treeview = Frame(self.janela_alterar, bg='#107db2')
+        self.frame_treeview.place(relx= 0.40, rely= 0.10, relwidth= 0.30, relheight=0.70)
         # Criar uma Treeview para exibir os equipamentos
-        self.lista_alterar = ttk.Treeview(self.janela_alterar, height=25, columns=('col1', 'col2'))
-        self.lista_alterar.place(relx= 0.40, rely= 0.09, width=800, height=400)
+        self.lista_alterar = ttk.Treeview(self.frame_treeview, height=25, columns=('col1', 'col2'))
+        self.lista_alterar.pack(side='bottom', fill='both', expand=True)
         self.lista_alterar.heading('#0', text='')
         self.lista_alterar.heading('#1', text='ID')
         self.lista_alterar.heading('#2', text='Nome')
@@ -749,18 +772,23 @@ class Application():
         self.lista_alterar.column('#2', width=250)
         self.lista_alterar.pack(pady=20)
         # Adicionar barra de rolagem
-        scroll_alterar = Scrollbar(self.janela_alterar, orient='vertical', command=self.lista_alterar.yview)
-        self.lista_alterar.configure(yscrollcommand=scroll_alterar.set)
-        scroll_alterar.place(relx=0.62, rely=0.05, relwidth=0.02, relheight=0.74)
+        scroll_vertical = Scrollbar(self.lista_alterar, orient='vertical', command=self.lista_alterar.yview)
+        scroll_vertical.pack(side='right', fill='y')
+        scroll_horizontal = Scrollbar(self.lista_alterar, orient='horizontal', command=self.lista_alterar.xview)
+        scroll_horizontal.pack(side='bottom', fill='x')
+        self.lista_alterar.configure(yscrollcommand=scroll_vertical.set, xscrollcommand=scroll_horizontal.set)
         # Carregar dados na Treeview
         self.carregar_dados_alteracao()
+        #frame_botoes1
+        self.frame_botoes = Frame(self.janela_alterar, bd=4, bg='#107db2', highlightbackground='#107db2',highlightthickness=2)
+        self.frame_botoes.place(relx= 0.40, rely= 0.80, relwidth= 0.30, relheight=0.10)
         # Botão para abrir a janela de edição
-        bt_editar = Button(self.janela_alterar, text="EDITAR SELECIONADO", bg='#107db2', fg='white',
+        bt_editar = Button(self.frame_botoes, text="EDITAR SELECIONADO", bg='#107db2', fg='white',
                            borderwidth=5, font=('Arial',10), command=self.editar_equipamento)
-        bt_editar.place(relx=0.48, rely=0.86)
-        bt_cancelar = Button(self.janela_alterar, text="CANCELAR", bg='red', fg='white',
+        bt_editar.place(relx=0.42, rely=0.30)
+        bt_cancelar = Button(self.frame_botoes, text="CANCELAR", bg='red', fg='white',
                              borderwidth=5, font=('Arial',10), command=self.janela_alterar.destroy)
-        bt_cancelar.place(relx=0.39, rely=0.86)
+        bt_cancelar.place(relx=0.10, rely=0.30)
 
 
     def carregar_dados_alteracao(self):
@@ -876,6 +904,9 @@ class Application():
 
 
     def editar_equipamento(self):
+        largura_tela = self.root.winfo_screenwidth()
+        altura_tela = self.root.winfo_screenheight()
+        tamanho_tela_str = f"{int(largura_tela)}x{int(altura_tela)}"
         """Função que abre uma janela de edição para o equipamento selecionado."""
         # Verificar se algum item foi selecionado
         selecionado = self.lista_alterar.selection()
@@ -897,9 +928,9 @@ class Application():
         self.janela_editar.title("Sagaz TEC // EDITAR EQUIPAMENTO")
         self.janela_editar.configure(background='#107db2')
         self.janela_editar.geometry(tamanho_tela_str)
-        self.janela_editar.state('zoomed')
-        self.janela_editar.resizable(True, True)
-        self.janela_editar.maxsize(root.winfo_screenwidth(), root.winfo_screenheight())
+        self.janela_editar.state('normal')
+        #self.janela_editar.resizable(False, False)
+        self.janela_editar.maxsize(width=largura_tela, height=altura_tela)
         self.janela_editar.minsize(width=largura_tela, height=altura_tela)
         self.janela_editar.grab_set()
         #imagem
@@ -914,7 +945,7 @@ class Application():
         Label(self.janela_editar, text='NOME').place(relx=0.30, rely=0.07)
         self.nome_editar_entry = Entry(self.janela_editar, highlightbackground='#107db2', 
                                                 highlightcolor='#107db2', highlightthickness=2)
-        self.nome_editar_entry.place(relx=0.38, rely=0.07, width=500)
+        self.nome_editar_entry.place(relx=0.38, rely=0.07, relwidth=500)
         self.nome_editar_entry.insert(0, nome)
         #setor
         Label(self.janela_editar, text='SETOR').place(relx=0.30, rely=0.17)
@@ -1009,17 +1040,17 @@ class Application():
         #Abaixo a criação do primeiro frame:
         self.frame1 = Frame(self.root, bd=4, bg='white', highlightbackground='#98F5FF',highlightthickness=2)
         self.frame1.place(relx= 0.02, rely= 0.02, relwidth= 0.96, relheight=0.46)
-        #imagem
-        #rotulo_imagem_inicial = tk.Label(self.root, image=self.imagem_tk)
-        #rotulo_imagem_inicial.place(relx=0.70, rely=0.04)
         #Abaixo a criação do segundo frame:
-        self.frame2 = Frame(self.root, bd=4, bg='white', 
-                             highlightbackground='#98F5FF',
-                             highlightthickness=2)
+        self.frame2 = Frame(self.root, bd=4, bg='white', highlightbackground='#98F5FF', highlightthickness=2)
         self.frame2.place(relx= 0.02, rely= 0.5, relwidth= 0.96, relheight=0.46)
 
 
     def widgets_frame1(self):
+        caminho_imagem = "sagaztec.png"
+        imagem = Image.open(caminho_imagem)
+        self.imagem_tk = ImageTk.PhotoImage(imagem)
+        rotulo_imagem = tk.Label(self.frame1, image=self.imagem_tk, bg='white')
+        rotulo_imagem.place(relx=0.82, rely=0.04)
         #criando o botão cadastrar:
         self.bt_cadastrar = Button(self.frame1, text='CADASTRAR EQUIPAMENTO',bg='#107db2',fg='white',font=("Arial", 10), command=self.tela_cadastro,borderwidth=5)
         self.bt_cadastrar.place(relx=0.01, rely=0.01, relwidth=0.15, relheight=0.10)
