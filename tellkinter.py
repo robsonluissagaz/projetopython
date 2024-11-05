@@ -51,12 +51,14 @@ class Application():
     #tela do menú inicial
     def __init__(self):
         self.root = root
+        self.imagem = Image.open("sagaztec.png")
+        self.imagem_tk = ImageTk.PhotoImage(self.imagem)
         self.tela()
         self.frame_de_tela()
         self.widgets_frame1()
         self.lista_frame2()
         root.mainloop()
-    
+
 
     def cancelar(self, janela_atual, janela_destino):
         janela_atual.destroy()
@@ -76,7 +78,6 @@ class Application():
             messagebox.showerror("Erro", "Arquivo não encontrado. Verifique se o caminho está correto.")
 
 
-
     def tela_nota_fiscal(self):
         largura_tela = self.root.winfo_screenwidth()
         altura_tela = self.root.winfo_screenheight()
@@ -88,33 +89,39 @@ class Application():
             self.janela_fiscal.configure(background='#107db2')
             self.janela_fiscal.geometry(tamanho_tela_str)
             self.janela_fiscal.state('zoomed')
-            self.janela_fiscal.maxsize(largura_tela, altura_tela)
-            self.janela_fiscal.minsize(altura_tela, largura_tela)
+            self.janela_fiscal.maxsize(width=largura_tela, height=altura_tela)
+            self.janela_fiscal.minsize(width=largura_tela, height=altura_tela)
             self.janela_fiscal.resizable(True, True)
             #tornando outras janelas não interativas
             self.janela_fiscal.grab_set()
+            #Frame da imagem
+            self.frame_imagem = Frame(self.janela_fiscal, bg='#107db2')
+            self.frame_imagem.place(relx= 0.82, rely= 0.04, relwidth= 0.17, relheight=0.34)
             #imagem
-            rotulo_imagem_alterar = tk.Label(self.janela_fiscal, image=self.imagem_tk)
-            rotulo_imagem_alterar.place(relx=0.82, rely=0.04)
+            rotulo_imagem_alterar = tk.Label(self.frame_imagem, image=self.imagem_tk)
+            rotulo_imagem_alterar.place(relx=0.02, rely=0.04)
+            #Frame botoes
+            self.frame_botoes = Frame(self.janela_fiscal, bg='lightblue')
+            self.frame_botoes.place(relx= 0.30, rely= 0.15, relwidth= 0.30, relheight=0.70)
             #Botões
             #Cadastrar
-            self.bt_fiscal_cadastrar = Button(self.janela_fiscal, text='CADASTRAR NOVA NOTA', borderwidth=5,
+            self.bt_fiscal_cadastrar = Button(self.frame_botoes, text='CADASTRAR NOVA NOTA', borderwidth=5,
                                             bg='#107db2',fg='white',font=("Arial", 10),
                                             command=self.tela_cadastrar_nota)
-            self.bt_fiscal_cadastrar.place(relx=0.40, rely=0.20)
+            self.bt_fiscal_cadastrar.pack(padx=40, pady=40)
             #Visualizar
-            self.bt_fiscal_visualizar_nota = Button(self.janela_fiscal, text='VISUALIZAR NOTAS', borderwidth=5,
+            self.bt_fiscal_visualizar_nota = Button(self.frame_botoes, text='VISUALIZAR NOTAS', borderwidth=5,
                                             bg='#107db2',fg='white',font=("Arial", 10),
                                             command=self.tela_visualizar_nota)
-            self.bt_fiscal_visualizar_nota.place(relx=0.41, rely=0.30)
+            self.bt_fiscal_visualizar_nota.pack(padx=40, pady=40)
             #Excluir
-            self.bt_fiscal_excluir = Button(self.janela_fiscal, text='EXCLUIR NOTA', borderwidth=5, bg='#107db2',
+            self.bt_fiscal_excluir = Button(self.frame_botoes, text='EXCLUIR NOTA', borderwidth=5, bg='#107db2',
                                     fg='white',font=("Arial", 10), command=self.tela_remover_nota)
-            self.bt_fiscal_excluir.place(relx=0.42, rely=0.40)
+            self.bt_fiscal_excluir.pack(padx=40, pady=40)
             #cancelar
-            self.bt_fiscal_cancelar = Button(self.janela_fiscal, text='CANCELAR', borderwidth=5, bg='red',
+            self.bt_fiscal_cancelar = Button(self.frame_botoes, text='CANCELAR', borderwidth=5, bg='red',
                                     fg='white',font=("Arial", 10), command=self.janela_fiscal.destroy)
-            self.bt_fiscal_cancelar.place(relx=0.43, rely=0.50)
+            self.bt_fiscal_cancelar.pack(padx=40, pady=40)
         else:
             self.janela_fiscal.lift()
 
@@ -129,53 +136,63 @@ class Application():
         self.janela_fiscal_cadastrar.configure(background='#107db2')
         self.janela_fiscal_cadastrar.geometry(tamanho_tela_str)
         self.janela_fiscal_cadastrar.state('zoomed')
-        self.janela_fiscal_cadastrar.maxsize(largura_tela, altura_tela)
-        self.janela_fiscal_cadastrar.minsize(altura_tela, largura_tela)
+        self.janela_fiscal_cadastrar.maxsize(width=largura_tela, height=altura_tela)
+        self.janela_fiscal_cadastrar.minsize(width=largura_tela, height=altura_tela)
         self.janela_fiscal_cadastrar.resizable(True, True)
         #tornando outras janelas não interativas
         self.janela_fiscal_cadastrar.grab_set()
+        #Frame da imagem
+        self.frame_imagem = Frame(self.janela_fiscal_cadastrar, bg='#107db2')
+        self.frame_imagem.place(relx= 0.82, rely= 0.04, relwidth= 0.17, relheight=0.34)
         #imagem
-        rotulo_imagem_alterar = tk.Label(self.janela_fiscal_cadastrar, image=self.imagem_tk)
-        rotulo_imagem_alterar.place(relx=0.82, rely=0.04)
+        rotulo_imagem_alterar = tk.Label(self.frame_imagem, image=self.imagem_tk)
+        rotulo_imagem_alterar.place(relx=0.02, rely=0.04)
+        #frame_treeview
+        self.frame_treeview = Frame(self.janela_fiscal_cadastrar, bg='#107db2')
+        self.frame_treeview.place(relx= 0.40, rely= 0.10, relwidth= 0.30, relheight=0.70)
         # Treeview
-        self.lista_excluir_nota = ttk.Treeview(self.janela_fiscal_cadastrar, height=25, columns=('col1', 'col2'))
-        self.lista_excluir_nota.place(relx= 0.40, rely= 0.09)
+        self.lista_excluir_nota = ttk.Treeview(self.frame_treeview, height=25, columns=('col1', 'col2'))
+        self.lista_excluir_nota.pack(side='bottom', fill='both', expand=True)
         self.lista_excluir_nota.heading('#0', text='')
         self.lista_excluir_nota.heading('#1', text='ID')
         self.lista_excluir_nota.heading('#2', text='Nome Equipamento')
         self.lista_excluir_nota.column('#0', width=1)
         self.lista_excluir_nota.column('#1', width=30)
         self.lista_excluir_nota.column('#2', width=300)
+        self.lista_excluir_nota.pack(pady=20)
         #scrollbar da treeview
-        scroll_excluir_nota = Scrollbar(self.janela_fiscal_cadastrar, orient='vertical', command=self.lista_excluir_nota.yview)
+        scroll_excluir_nota = Scrollbar(self.lista_excluir_nota, orient='vertical', command=self.lista_excluir_nota.yview)
         self.lista_excluir_nota.configure(yscrollcommand=scroll_excluir_nota.set)
-        scroll_excluir_nota.place(relx=0.65, rely=0.09, relwidth=0.02, relheight=0.75)
+        scroll_excluir_nota.pack(side='right', fill='y')
+        #Frame pesquisa
+        self.frame_pesquisa = Frame(self.janela_fiscal_cadastrar, bg='lightblue')
+        self.frame_pesquisa.place(relx= 0.05, rely= 0.10, relwidth= 0.30, relheight=0.70)
         #label pesquisa id
-        self.lb_excluir_id = Label(self.janela_fiscal_cadastrar, text='PESQUISA ID',font=("Arial", 10))
-        self.lb_excluir_id.place(relx=0.04, rely=0.29)
+        self.lb_alterar_id = Label(self.frame_pesquisa, text='PESQUISA ID',font=("Arial", 10))
+        self.lb_alterar_id.pack(padx=10,pady=10)
         #campo pesquisa id
-        self.excluir_id_entry = Entry(self.janela_fiscal_cadastrar, bd=4, highlightbackground='#98F5FF', 
-                                                highlightcolor='#98F5FF', highlightthickness=3)
-        self.excluir_id_entry.place(relx=0.11, rely=0.29, width=200)
+        self.excluir_id_entry = Entry(self.frame_pesquisa, bd=4, highlightbackground='#98F5FF', 
+                                                highlightcolor='#98F5FF', highlightthickness=3, width=20)
+        self.excluir_id_entry.pack(padx=10, pady=10)
         #botão pesquisa id
-        bt_pesquisa_id = Button(self.janela_fiscal_cadastrar, text="PESQUISAR ID",borderwidth=5,bg='#107db2',fg='white',
-                                 font=("Arial", 10), command=self.pesquisa_id_excluir_notas)
-        bt_pesquisa_id.place(relx=0.26, rely=0.29)
+        bt_pesquisa = Button(self.frame_pesquisa, text="PESQUISAR ID", 
+                             bg='#107db2',borderwidth=5, fg='white', font=('Arial',10), command=self.pesquisa_id_excluir_notas)
+        bt_pesquisa.pack(padx=10,pady=10)
         #label pesquisa nome
-        self.lb_excluir_nome = Label(self.janela_fiscal_cadastrar, text='PESQUISA NOME',font=("Arial", 10))
-        self.lb_excluir_nome.place(relx=0.02, rely=0.40)
+        self.lb_alterar_nome = Label(self.frame_pesquisa, text='PESQUISA NOME',font=("Arial", 10))
+        self.lb_alterar_nome.pack(padx=10, pady=10)
         #campo pesquisa nome
-        self.excluir_nome_entry = Entry(self.janela_fiscal_cadastrar, bd=4, highlightbackground='#98F5FF', 
-                                                highlightcolor='#98F5FF', highlightthickness=3)
-        self.excluir_nome_entry.place(relx=0.11, rely=0.40, width=200)
+        self.excluir_nome_entry = Entry(self.frame_pesquisa, bd=4, highlightbackground='#98F5FF',
+                                           highlightcolor='#98F5FF', highlightthickness=3, width=30)
+        self.excluir_nome_entry.pack(padx=10,pady=10)
         #botão pesquisa nome
-        bt_pesquisa_nome = Button(self.janela_fiscal_cadastrar, text="PESQUISAR NOME",borderwidth=5,bg='#107db2',fg='white',
-                                 font=("Arial", 10),command=self.pesquisa_nome_excluir_notas)
-        bt_pesquisa_nome.place(relx=0.26, rely=0.40)
-        #Botão resetar treeview
-        bt_reseta_treeview_excluir = Button(self.janela_fiscal_cadastrar, text="RESETAR PESQUISA",
-                                  bg='red', fg='white', borderwidth=5, font=("Arial", 10), command=self.carregar_dados_fiscal)
-        bt_reseta_treeview_excluir.place(relx=0.26, rely=0.50)
+        bt_pesquisa_alterar_nome = Button(self.frame_pesquisa,text="PESQUISAR NOME",
+                                  bg='#107db2',fg='white',borderwidth=5, font=('Arial',10), command=self.pesquisa_nome_excluir_notas)
+        bt_pesquisa_alterar_nome.pack(padx=10,pady=10)
+        #Botão para resetar a treeview
+        bt_reseta_treeview = Button(self.frame_pesquisa,text="RESETAR PESQUISA",
+                                  bg='red',fg='white',borderwidth=5, font=('Arial',10), command=self.carregar_dados_fiscal)
+        bt_reseta_treeview.pack(padx=40,pady=40)
         #botão Cadastrar nota selecionado
         bt_nota_selecionado = Button(self.janela_fiscal_cadastrar, text="CADASTRAR NOTA",
                                         borderwidth=5,bg='#107db2',fg='white',font=("Arial", 10),
@@ -198,37 +215,47 @@ class Application():
         self.janela_fiscal_cad.configure(background='#107db2')
         self.janela_fiscal_cad.geometry(tamanho_tela_str)
         self.janela_fiscal_cad.state('zoomed')
-        self.janela_fiscal_cad.maxsize(largura_tela, altura_tela)
-        self.janela_fiscal_cad.minsize(altura_tela, largura_tela)
+        self.janela_fiscal_cad.maxsize(width=largura_tela, height=altura_tela)
+        self.janela_fiscal_cad.minsize(width=largura_tela, height=altura_tela)
         self.janela_fiscal_cad.resizable(True, True)
         #tornando outras janelas não interativas
         self.janela_fiscal_cad.grab_set()
+        #Frame da imagem
+        self.frame_imagem = Frame(self.janela_fiscal_cad, bg='#107db2')
+        self.frame_imagem.place(relx= 0.82, rely= 0.04, relwidth= 0.17, relheight=0.34)
         #imagem
-        rotulo_imagem_cad = tk.Label(self.janela_fiscal_cad, image=self.imagem_tk)
-        rotulo_imagem_cad.place(relx=0.82, rely=0.04)
+        rotulo_imagem_alterar = tk.Label(self.frame_imagem, image=self.imagem_tk)
+        rotulo_imagem_alterar.place(relx=0.02, rely=0.04)
+        #frame_treeview
+        self.frame_treeview = Frame(self.janela_fiscal_cad, bg='#107db2')
+        self.frame_treeview.place(relx= 0.40, rely= 0.10, relwidth= 0.30, relheight=0.70)
         #treeview
-        self.lista_cad_nota = ttk.Treeview(self.janela_fiscal_cad, height=25, columns=('col1', 'col2'))
-        self.lista_cad_nota.place(relx= 0.30, rely= 0.09)
+        self.lista_cad_nota = ttk.Treeview(self.frame_treeview, height=25, columns=('col1', 'col2'))
+        self.lista_cad_nota.pack(side='bottom', fill='both', expand=True)
         self.lista_cad_nota.heading('#0', text='')
         self.lista_cad_nota.heading('#1', text='ID')
         self.lista_cad_nota.heading('#2', text='Nota')
         self.lista_cad_nota.column('#0', width=1)
         self.lista_cad_nota.column('#1', width=30)
         self.lista_cad_nota.column('#2', width=400)
+        self.lista_cad_nota.pack(pady=20)
         #scrollbar da treeview
-        scroll_cad_nota = Scrollbar(self.janela_fiscal_cad, orient='vertical', command=self.lista_cad_nota.yview)
+        scroll_cad_nota = Scrollbar(self.lista_cad_nota, orient='vertical', command=self.lista_cad_nota.yview)
         self.lista_cad_nota.configure(yscrollcommand=scroll_cad_nota.set)
-        scroll_cad_nota.place(relx=0.64, rely=0.11, relwidth=0.02, relheight=0.75)
+        scroll_cad_nota.pack(side='right', fill='y')
+        #frame botoes baixo
+        self.frame_botoes = Frame(self.janela_fiscal_cad, bd=4, bg='#107db2', highlightbackground='#107db2',highlightthickness=2)
+        self.frame_botoes.place(relx= 0.40, rely= 0.80, relwidth= 0.30, relheight=0.10)
         #botoes
         #Abrir Notas
-        self.bt_abrir_nota = Button(self.janela_fiscal_cad, text='ABRIR NOTA',borderwidth=5,
+        self.bt_abrir_nota = Button(self.frame_botoes, text='ABRIR NOTA',borderwidth=5,
                                 bg='#107db2',fg='white', font=("Arial", 10), command=self.abrir_nota)
-        self.bt_abrir_nota.place(relx=0.48, rely=0.92)
+        self.bt_abrir_nota.place(relx=0.42, rely=0.30)
         #Cancelar
-        self.bt_abrir_nota = Button(self.janela_fiscal_cad, text='CANCELAR',borderwidth=5,
+        self.bt_cancelar = Button(self.frame_botoes, text='CANCELAR',borderwidth=5,
                                 bg='red',fg='white',font=("Arial", 10),
                                 command=lambda:self.cancelar(self.janela_fiscal_cad,self.janela_fiscal_visualizar))
-        self.bt_abrir_nota.place(relx=0.35, rely=0.92)
+        self.bt_cancelar.place(relx=0.10, rely=0.30)
         self.carregar_dados_notas()
         
 
@@ -241,61 +268,74 @@ class Application():
         self.janela_fiscal_visualizar.configure(background='#107db2')
         self.janela_fiscal_visualizar.geometry(tamanho_tela_str)
         self.janela_fiscal_visualizar.state('zoomed')
-        self.janela_fiscal_visualizar.maxsize(largura_tela, altura_tela)
-        self.janela_fiscal_visualizar.minsize(altura_tela, largura_tela)
+        self.janela_fiscal_visualizar.maxsize(width=largura_tela, height=altura_tela)
+        self.janela_fiscal_visualizar.minsize(width=largura_tela, height=altura_tela)
         self.janela_fiscal_visualizar.resizable(True, True)
         #tornando outras janelas não interativas
         self.janela_fiscal_visualizar.grab_set()
+        #Frame da imagem
+        self.frame_imagem = Frame(self.janela_fiscal_visualizar, bg='#107db2')
+        self.frame_imagem.place(relx= 0.82, rely= 0.04, relwidth= 0.17, relheight=0.34)
         #imagem
-        rotulo_imagem_alterar = tk.Label(self.janela_fiscal_visualizar, image=self.imagem_tk)
-        rotulo_imagem_alterar.place(relx=0.82, rely=0.04)
+        rotulo_imagem_alterar = tk.Label(self.frame_imagem, image=self.imagem_tk)
+        rotulo_imagem_alterar.place(relx=0.02, rely=0.04)
+        #frame_treeview
+        self.frame_treeview = Frame(self.janela_fiscal_visualizar, bg='#107db2')
+        self.frame_treeview.place(relx= 0.40, rely= 0.10, relwidth= 0.30, relheight=0.70)
         #treeview
-        self.lista_excluir_nota = ttk.Treeview(self.janela_fiscal_visualizar, height=25, columns=('col1', 'col2'))
-        self.lista_excluir_nota.place(relx= 0.40, rely= 0.09)
+        self.lista_excluir_nota = ttk.Treeview(self.frame_treeview, height=25, columns=('col1', 'col2'))
+        self.lista_excluir_nota.pack(side='bottom', fill='both', expand=True)
         self.lista_excluir_nota.heading('#0', text='')
         self.lista_excluir_nota.heading('#1', text='ID')
         self.lista_excluir_nota.heading('#2', text='Nome Equipamento')
         self.lista_excluir_nota.column('#0', width=1)
         self.lista_excluir_nota.column('#1', width=30)
         self.lista_excluir_nota.column('#2', width=300)
+        self.lista_excluir_nota.pack(pady=20)
         #scrollbar da treeview
-        scroll_excluir_nota = Scrollbar(self.janela_fiscal_visualizar, orient='vertical', command=self.lista_excluir_nota.yview)
+        scroll_excluir_nota = Scrollbar(self.lista_excluir_nota, orient='vertical', command=self.lista_excluir_nota.yview)
         self.lista_excluir_nota.configure(yscrollcommand=scroll_excluir_nota.set)
-        scroll_excluir_nota.place(relx=0.65, rely=0.09, relwidth=0.02, relheight=0.75)
+        scroll_excluir_nota.pack(side='right', fill='y')
+        #Frame pesquisa
+        self.frame_pesquisa = Frame(self.janela_fiscal_visualizar, bg='lightblue')
+        self.frame_pesquisa.place(relx= 0.05, rely= 0.10, relwidth= 0.30, relheight=0.70)
         #label pesquisa id
-        self.lb_excluir_id = Label(self.janela_fiscal_visualizar, text='PESQUISA ID',font=("Arial", 10))
-        self.lb_excluir_id.place(relx=0.04, rely=0.29)
+        self.lb_excluir_id = Label(self.frame_pesquisa, text='PESQUISA ID',font=("Arial", 10))
+        self.lb_excluir_id.pack(padx=10,pady=10)
         #campo pesquisa id
-        self.excluir_id_entry = Entry(self.janela_fiscal_visualizar, bd=4, highlightbackground='#98F5FF', 
+        self.excluir_id_entry = Entry(self.frame_pesquisa, bd=4, highlightbackground='#98F5FF', 
                                                 highlightcolor='#98F5FF', highlightthickness=3)
-        self.excluir_id_entry.place(relx=0.11, rely=0.29, width=200)
+        self.excluir_id_entry.pack(padx=10,pady=10)
         #botão pesquisa id
-        bt_pesquisa_id = Button(self.janela_fiscal_visualizar, text="PESQUISAR ID",borderwidth=5,bg='#107db2',fg='white',
+        bt_pesquisa_id = Button(self.frame_pesquisa, text="PESQUISAR ID",borderwidth=5,bg='#107db2',fg='white',
                                  font=("Arial", 10), command=self.pesquisa_id_excluir_notas)
-        bt_pesquisa_id.place(relx=0.26, rely=0.29)
+        bt_pesquisa_id.pack(padx=10,pady=10)
         #label pesquisa nome
-        self.lb_excluir_nome = Label(self.janela_fiscal_visualizar, text='PESQUISA NOME',font=("Arial", 10))
-        self.lb_excluir_nome.place(relx=0.02, rely=0.40)
+        self.lb_excluir_nome = Label(self.frame_pesquisa, text='PESQUISA NOME',font=("Arial", 10))
+        self.lb_excluir_nome.pack(padx=10,pady=10)
         #campo pesquisa nome
-        self.excluir_nome_entry = Entry(self.janela_fiscal_visualizar, bd=4, highlightbackground='#98F5FF', 
+        self.excluir_nome_entry = Entry(self.frame_pesquisa, bd=4, highlightbackground='#98F5FF', 
                                                 highlightcolor='#98F5FF', highlightthickness=3)
-        self.excluir_nome_entry.place(relx=0.11, rely=0.40, width=200)
+        self.excluir_nome_entry.pack(padx=10,pady=10)
         #botão pesquisa nome
-        bt_pesquisa_nome = Button(self.janela_fiscal_visualizar,text="PESQUISAR NOME",borderwidth=5,bg='#107db2',fg='white',
+        bt_pesquisa_nome = Button(self.frame_pesquisa,text="PESQUISAR NOME",borderwidth=5,bg='#107db2',fg='white',
                                  font=("Arial", 10),command=self.pesquisa_nome_excluir_notas)
-        bt_pesquisa_nome.place(relx=0.26, rely=0.40)
+        bt_pesquisa_nome.pack(padx=10,pady=10)
         #Botão resetar treeview
-        bt_reseta_treeview_excluir = Button(self.janela_fiscal_visualizar, text="RESETAR PESQUISA",
+        bt_reseta_treeview_excluir = Button(self.frame_pesquisa, text="RESETAR PESQUISA",
                                   bg='red', fg='white', borderwidth=5, font=("Arial", 10), command=self.carregar_dados_fiscal)
-        bt_reseta_treeview_excluir.place(relx=0.26, rely=0.50)
+        bt_reseta_treeview_excluir.pack(padx=40,pady=40)
+        #frame botoes baixo
+        self.frame_botoes = Frame(self.janela_fiscal_visualizar, bd=4, bg='#107db2', highlightbackground='#107db2',highlightthickness=2)
+        self.frame_botoes.place(relx= 0.40, rely= 0.80, relwidth= 0.30, relheight=0.10)
         #botão excluir selecionado
-        bt_excluir_selecionado = Button(self.janela_fiscal_visualizar, text="SELECIONAR",borderwidth=5,bg='#107db2',fg='white',
+        bt_excluir_selecionado = Button(self.frame_botoes, text="SELECIONAR",borderwidth=5,bg='#107db2',fg='white',
                                  font=("Arial", 10), command=self.tela_notas_cadastradas)
-        bt_excluir_selecionado.place(relx=0.53, rely=0.90)
+        bt_excluir_selecionado.place(relx=0.42, rely=0.30)
         #botão cancelar
-        bt_cancelar = Button(self.janela_fiscal_visualizar, text="CANCELAR",borderwidth=5, bg='red',fg='white',
+        bt_cancelar = Button(self.frame_botoes, text="CANCELAR",borderwidth=5, bg='red',fg='white',
                                  font=("Arial", 10), command=lambda:self.cancelar(self.janela_fiscal_visualizar, self.janela_fiscal))
-        bt_cancelar.place(relx=0.42, rely=0.90)
+        bt_cancelar.place(relx=0.10, rely=0.30)
         self.carregar_dados_fiscal()
 
 
@@ -316,7 +356,9 @@ class Application():
         # Verifica se há notas fiscais para o equipamento
         if not notas:
             messagebox.showinfo("Informação", "Não há notas fiscais vinculadas a este equipamento.")
-            return
+            self.janela_fiscal_cad.destroy()
+            self.janela_fiscal_visualizar.lift()
+            self.janela_fiscal_visualizar.grab_set()
         for nota in notas:
             self.lista_cad_nota.insert("", "end", values=nota)
         
@@ -331,8 +373,8 @@ class Application():
         self.janela_fiscal_remover.configure(background='#107db2')
         self.janela_fiscal_remover.geometry(tamanho_tela_str)
         self.janela_fiscal_remover.state('zoomed')
-        self.janela_fiscal_remover.maxsize(largura_tela, altura_tela)
-        self.janela_fiscal_remover.minsize(altura_tela, largura_tela)
+        self.janela_fiscal_remover.maxsize(width=largura_tela, height=altura_tela)
+        self.janela_fiscal_remover.minsize(width=largura_tela, height=altura_tela)
         self.janela_fiscal_remover.resizable(True, True)
         #tornando outras janelas não interativas
         self.janela_fiscal_remover.grab_set()
@@ -444,7 +486,6 @@ class Application():
         conn.close()
 
 
-
     def cadastrar_nota(self):
         # Obtém o item selecionado na Treeview
         item_selecionado = self.lista_excluir_nota.focus()
@@ -482,18 +523,19 @@ class Application():
     def tela_cadastro(self):
         largura_tela = self.root.winfo_screenwidth()
         altura_tela = self.root.winfo_screenheight()
-        tamanho_tela_str = f"{largura_tela}x{altura_tela}".replace(' ', '')
+        tamanho_tela_str = f"{int(largura_tela)}x{int(altura_tela)}"
         #criação da janela cadastro
         self.janela_cadastro = Toplevel(self.root)
-        self.framecadastro = Frame(self.janela_cadastro, bd=4, bg='white', highlightbackground='#98F5FF',highlightthickness=2)
-        self.framecadastro.place(relx= 0.15, rely= 0.13, relwidth= 0.58, relheight=0.75)
         self.janela_cadastro.title("Sagaz TEC // CADASTRO DE EQUIPAMENTOS")
         self.janela_cadastro.configure(background='#107db2')
         self.janela_cadastro.geometry(tamanho_tela_str)
         self.janela_cadastro.state('zoomed')
-        self.janela_cadastro.maxsize(largura_tela, altura_tela)
-        self.janela_cadastro.minsize(altura_tela, largura_tela)
-        self.janela_cadastro.resizable(True, True)
+        self.janela_cadastro.maxsize(width=largura_tela, height=altura_tela)
+        self.janela_cadastro.minsize(width=largura_tela, height=altura_tela)
+        #self.janela_cadastro.resizable(True, True)
+        #Frame
+        self.framecadastro = Frame(self.janela_cadastro, bd=4, bg='white', highlightbackground='#98F5FF',highlightthickness=2)
+        self.framecadastro.place(relx= 0.15, rely= 0.13, relwidth= 0.58, relheight=0.75)
         #tornando outras janelas não interativas
         self.janela_cadastro.grab_set()
         #imagem
@@ -501,54 +543,54 @@ class Application():
         rotulo_imagem_alterar.place(relx=0.82, rely=0.04)
         #criação do conteudo da janela:
         #criando o campo nome
-        self.lb_nome = Label(self.janela_cadastro, text='NOME',fg='black',font=("Arial", 10))
-        self.lb_nome.place(relx=0.2, rely=0.15)
-        self.nome_entry = Entry(self.janela_cadastro, highlightbackground='#107db2', 
+        self.lb_nome = Label(self.framecadastro, text='NOME',fg='black',font=("Arial", 10))
+        self.lb_nome.place(relx=0.15, rely=0.15)
+        self.nome_entry = Entry(self.framecadastro, highlightbackground='#107db2', 
                                                 highlightcolor='#107db2', highlightthickness=2)
         self.nome_entry.place(relx=0.30, rely=0.15, width=500)
         #criando o campo setor
-        self.lb_setor = Label(self.janela_cadastro, text='SETOR',fg='black',font=("Arial", 10))
-        self.lb_setor.place(relx=0.2, rely=0.25)
-        self.setor_entry = Entry(self.janela_cadastro, highlightbackground='#107db2', 
+        self.lb_setor = Label(self.framecadastro, text='SETOR',fg='black',font=("Arial", 10))
+        self.lb_setor.place(relx=0.15, rely=0.25)
+        self.setor_entry = Entry(self.framecadastro, highlightbackground='#107db2', 
                                                 highlightcolor='#107db2', highlightthickness=2)
         self.setor_entry.place(relx=0.30, rely=0.25, width=500)
         #criando o campo usuário:
-        self.lb_usuario = Label(self.janela_cadastro, text='USUÁRIO',fg='black',font=("Arial", 10))
-        self.lb_usuario.place(relx=0.2, rely=0.35)
-        self.usuario_entry = Entry(self.janela_cadastro, highlightbackground='#107db2', 
+        self.lb_usuario = Label(self.framecadastro, text='USUÁRIO',fg='black',font=("Arial", 10))
+        self.lb_usuario.place(relx=0.15, rely=0.35)
+        self.usuario_entry = Entry(self.framecadastro, highlightbackground='#107db2', 
                                                 highlightcolor='#107db2', highlightthickness=2)
         self.usuario_entry.place(relx=0.30, rely=0.35, width=500)
         #criando o campo componentes
-        self.lb_componente = Label(self.janela_cadastro, text='COMPONENTES',fg='black',font=("Arial", 10))
-        self.lb_componente.place(relx=0.2, rely=0.45)
-        self.componente_entry = Entry(self.janela_cadastro, highlightbackground='#107db2', 
+        self.lb_componente = Label(self.framecadastro, text='COMPONENTES',fg='black',font=("Arial", 10))
+        self.lb_componente.place(relx=0.15, rely=0.45)
+        self.componente_entry = Entry(self.framecadastro, highlightbackground='#107db2', 
                                                 highlightcolor='#107db2', highlightthickness=2)
         self.componente_entry.place(relx=0.30, rely=0.45, width=500)
         #criando o campo categoria
-        self.lb_categoria = Label(self.janela_cadastro, text='CATEGORIA',fg='black',font=("Arial", 10))
-        self.lb_categoria.place(relx=0.2, rely=0.55)
-        self.categoria_entry = Entry(self.janela_cadastro, highlightbackground='#107db2', 
+        self.lb_categoria = Label(self.framecadastro, text='CATEGORIA',fg='black',font=("Arial", 10))
+        self.lb_categoria.place(relx=0.15, rely=0.55)
+        self.categoria_entry = Entry(self.framecadastro, highlightbackground='#107db2', 
                                                 highlightcolor='#107db2', highlightthickness=2)
         self.categoria_entry.place(relx=0.30, rely=0.55, width=500)
         #criando o campo KEY
-        self.lb_key = Label(self.janela_cadastro, text='SERIAL KEY',fg='black',font=("Arial", 10))
-        self.lb_key.place(relx=0.2, rely=0.65)
-        self.key_entry = Entry(self.janela_cadastro, highlightbackground='#107db2', 
+        self.lb_key = Label(self.framecadastro, text='SERIAL KEY',fg='black',font=("Arial", 10))
+        self.lb_key.place(relx=0.15, rely=0.65)
+        self.key_entry = Entry(self.framecadastro, highlightbackground='#107db2', 
                                                 highlightcolor='#107db2', highlightthickness=2)
         self.key_entry.place(relx=0.30, rely=0.65, width=500)
         #criando o campo observações
-        self.lb_obs = Label(self.janela_cadastro, text='OBSERVAÇÃO',fg='black',font=("Arial", 10))
-        self.lb_obs.place(relx=0.2, rely=0.75)
-        self.obs_entry = Entry(self.janela_cadastro, highlightbackground='#107db2', 
+        self.lb_obs = Label(self.framecadastro, text='OBSERVAÇÃO',fg='black',font=("Arial", 10))
+        self.lb_obs.place(relx=0.15, rely=0.75)
+        self.obs_entry = Entry(self.framecadastro, highlightbackground='#107db2', 
                                                 highlightcolor='#107db2', highlightthickness=2)
         self.obs_entry.place(relx=0.30, rely=0.75, width=500)
         #criando o botão de cadastrar
-        self.bt_cadastrar = Button(self.janela_cadastro, text='CADASTRAR',
+        self.bt_cadastrar = Button(self.framecadastro, text='CADASTRAR',
                                    borderwidth=5, bg='#107db2', fg='white',
                                    font=("Arial", 10), command=self.cadastrar)
         self.bt_cadastrar.place(relx= 0.57, rely= 0.82)
         #Botão para fechar a janela:
-        self.bt_fechar = Button(self.janela_cadastro, text='CANCELAR', borderwidth=5, bg='red',
+        self.bt_fechar = Button(self.framecadastro, text='CANCELAR', borderwidth=5, bg='red',
                                 fg='white',font=("Arial", 10), command=self.janela_cadastro.destroy)
         self.bt_fechar.place(relx= 0.32, rely= 0.82)
 
@@ -566,7 +608,6 @@ class Application():
         self.root.maxsize(root.winfo_screenwidth(), root.winfo_screenheight())
         self.root.minsize(width=largura_tela, height=altura_tela)
         
-
 
     def salvar_alteracoes(self, equipamento_id):
         nome = self.nome_editar_entry.get().upper()
@@ -627,53 +668,63 @@ class Application():
         #imagem
         rotulo_imagem_alterar = tk.Label(self.janela_excluir, image=self.imagem_tk)
         rotulo_imagem_alterar.place(relx=0.82, rely=0.04)
-        #treeview
-        self.lista_excluir = ttk.Treeview(self.janela_excluir, height=25, columns=('col1', 'col2'))
-        self.lista_excluir.place(relx= 0.40, rely= 0.09)
+        #frame_treeview
+        self.frame_treeview = Frame(self.janela_excluir, bg='#107db2')
+        self.frame_treeview.place(relx= 0.40, rely= 0.10, relwidth= 0.30, relheight=0.70)
+        # Treeview
+        self.lista_excluir = ttk.Treeview(self.frame_treeview, height=25, columns=('col1', 'col2'))
+        self.lista_excluir.pack(side='bottom', fill='both', expand=True)
         self.lista_excluir.heading('#0', text='')
         self.lista_excluir.heading('#1', text='ID')
         self.lista_excluir.heading('#2', text='Nome Equipamento')
         self.lista_excluir.column('#0', width=1)
         self.lista_excluir.column('#1', width=30)
         self.lista_excluir.column('#2', width=300)
+        self.lista_excluir.pack(pady=20)
         #scrollbar da treeview
-        scroll_excluir = Scrollbar(self.janela_excluir, orient='vertical', command=self.lista_excluir.yview)
+        scroll_excluir = Scrollbar(self.lista_excluir, orient='vertical', command=self.lista_excluir.yview)
         self.lista_excluir.configure(yscrollcommand=scroll_excluir.set)
-        scroll_excluir.place(relx=0.65, rely=0.09, relwidth=0.02, relheight=0.75)
+        scroll_excluir.pack(side='right', fill='y')
+        #Frame das pesquisas
+        self.frame_pesquisa = Frame(self.janela_excluir, bg='lightblue')
+        self.frame_pesquisa.place(relx= 0.05, rely= 0.10, relwidth= 0.30, relheight=0.70)
         #label pesquisa id
-        self.lb_excluir_id = Label(self.janela_excluir, text='PESQUISA ID',font=("Arial", 10))
-        self.lb_excluir_id.place(relx=0.04, rely=0.29)
+        self.lb_excluir_id = Label(self.frame_pesquisa, text='PESQUISA ID',font=("Arial", 10))
+        self.lb_excluir_id.pack(padx=10,pady=10)
         #campo pesquisa id
-        self.excluir_id_entry = Entry(self.janela_excluir, bd=4, highlightbackground='#98F5FF', 
+        self.excluir_id_entry = Entry(self.frame_pesquisa, bd=4, highlightbackground='#98F5FF', 
                                                 highlightcolor='#98F5FF', highlightthickness=3)
-        self.excluir_id_entry.place(relx=0.11, rely=0.29, width=200)
+        self.excluir_id_entry.pack(padx=10,pady=10)
         #botão pesquisa id
-        bt_pesquisa_id = Button(self.janela_excluir, text="PESQUISAR ID",borderwidth=5,bg='#107db2',fg='white',
+        bt_pesquisa_id = Button(self.frame_pesquisa, text="PESQUISAR ID",borderwidth=5,bg='#107db2',fg='white',
                                  font=("Arial", 10), command=self.pesquisa_id_excluir)
-        bt_pesquisa_id.place(relx=0.26, rely=0.29)
+        bt_pesquisa_id.pack(padx=10,pady=10)
         #label pesquisa nome
-        self.lb_excluir_nome = Label(self.janela_excluir, text='PESQUISA NOME',font=("Arial", 10))
-        self.lb_excluir_nome.place(relx=0.02, rely=0.40)
+        self.lb_excluir_nome = Label(self.frame_pesquisa, text='PESQUISA NOME',font=("Arial", 10))
+        self.lb_excluir_nome.pack(padx=10,pady=10)
         #campo pesquisa nome
-        self.excluir_nome_entry = Entry(self.janela_excluir, bd=4, highlightbackground='#98F5FF', 
+        self.excluir_nome_entry = Entry(self.frame_pesquisa, bd=4, highlightbackground='#98F5FF', 
                                                 highlightcolor='#98F5FF', highlightthickness=3)
-        self.excluir_nome_entry.place(relx=0.11, rely=0.40, width=200)
+        self.excluir_nome_entry.pack(padx=10,pady=10)
         #botão pesquisa nome
-        bt_pesquisa_nome = Button(self.janela_excluir,text="PESQUISAR NOME",borderwidth=5,bg='#107db2',fg='white',
+        bt_pesquisa_nome = Button(self.frame_pesquisa,text="PESQUISAR NOME",borderwidth=5,bg='#107db2',fg='white',
                                  font=("Arial", 10),command=self.pesquisa_nome_excluir)
-        bt_pesquisa_nome.place(relx=0.26, rely=0.40)
+        bt_pesquisa_nome.pack(padx=10,pady=10)
         #Botão resetar treeview
-        bt_reseta_treeview_excluir = Button(self.janela_excluir, text="RESETAR PESQUISA",
+        bt_reseta_treeview_excluir = Button(self.frame_pesquisa, text="RESETAR PESQUISA",
                                   bg='red', fg='white', borderwidth=5, font=("Arial", 10), command=self.carregar_dados_exclusao)
-        bt_reseta_treeview_excluir.place(relx=0.26, rely=0.50)
+        bt_reseta_treeview_excluir.pack(padx=40,pady=40)
+        #frame_botoes1
+        self.frame_botoes = Frame(self.janela_excluir, bd=4, bg='#107db2', highlightbackground='#107db2',highlightthickness=2)
+        self.frame_botoes.place(relx= 0.40, rely= 0.80, relwidth= 0.30, relheight=0.10)
         #botão excluir selecionado
-        bt_excluir_selecionado = Button(self.janela_excluir, text="EXCLUIR SELECIONADO",borderwidth=5,bg='#107db2',fg='white',
+        bt_excluir_selecionado = Button(self.frame_botoes, text="EXCLUIR SELECIONADO",borderwidth=5,bg='#107db2',fg='white',
                                  font=("Arial", 10), command=self.excluir)
-        bt_excluir_selecionado.place(relx=0.51, rely=0.92)
+        bt_excluir_selecionado.place(relx=0.42, rely=0.30)
         #botão cancelar
-        bt_cancelar = Button(self.janela_excluir, text="CANCELAR",borderwidth=5, bg='red',fg='white',
+        bt_cancelar = Button(self.frame_botoes, text="CANCELAR",borderwidth=5, bg='red',fg='white',
                                  font=("Arial", 10), command=self.janela_excluir.destroy)
-        bt_cancelar.place(relx=0.41, rely=0.92)
+        bt_cancelar.place(relx=0.10, rely=0.30)
         self.carregar_dados_exclusao()
 
 
@@ -717,7 +768,7 @@ class Application():
         self.janela_alterar.configure(background='#107db2')
         self.janela_alterar.geometry(tamanho_tela_str)
         self.janela_alterar.state('zoomed')
-        self.janela_alterar.maxsize(root.winfo_screenwidth(), root.winfo_screenheight())
+        self.janela_alterar.maxsize(width=largura_tela, height=altura_tela)
         self.janela_alterar.minsize(width=largura_tela, height=altura_tela)
         self.janela_alterar.resizable(True, True)
         # Tornar outras janelas não interativas
@@ -928,7 +979,7 @@ class Application():
         self.janela_editar.title("Sagaz TEC // EDITAR EQUIPAMENTO")
         self.janela_editar.configure(background='#107db2')
         self.janela_editar.geometry(tamanho_tela_str)
-        self.janela_editar.state('normal')
+        self.janela_editar.state('zoomed')
         #self.janela_editar.resizable(False, False)
         self.janela_editar.maxsize(width=largura_tela, height=altura_tela)
         self.janela_editar.minsize(width=largura_tela, height=altura_tela)
@@ -945,7 +996,7 @@ class Application():
         Label(self.janela_editar, text='NOME').place(relx=0.30, rely=0.07)
         self.nome_editar_entry = Entry(self.janela_editar, highlightbackground='#107db2', 
                                                 highlightcolor='#107db2', highlightthickness=2)
-        self.nome_editar_entry.place(relx=0.38, rely=0.07, relwidth=500)
+        self.nome_editar_entry.place(relx=0.38, rely=0.07, width=500)
         self.nome_editar_entry.insert(0, nome)
         #setor
         Label(self.janela_editar, text='SETOR').place(relx=0.30, rely=0.17)
@@ -1046,11 +1097,9 @@ class Application():
 
 
     def widgets_frame1(self):
-        caminho_imagem = "sagaztec.png"
-        imagem = Image.open(caminho_imagem)
-        self.imagem_tk = ImageTk.PhotoImage(imagem)
-        rotulo_imagem = tk.Label(self.frame1, image=self.imagem_tk, bg='white')
-        rotulo_imagem.place(relx=0.82, rely=0.04)
+        #imagem
+        rotulo_imagem_alterar = tk.Label(self.frame1, image=self.imagem_tk, background='white')
+        rotulo_imagem_alterar.place(relx=0.82, rely=0.04)
         #criando o botão cadastrar:
         self.bt_cadastrar = Button(self.frame1, text='CADASTRAR EQUIPAMENTO',bg='#107db2',fg='white',font=("Arial", 10), command=self.tela_cadastro,borderwidth=5)
         self.bt_cadastrar.place(relx=0.01, rely=0.01, relwidth=0.15, relheight=0.10)
