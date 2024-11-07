@@ -1,3 +1,5 @@
+import imaplib
+import email
 from tkinter import *
 import tkinter as tk
 from tkinter import ttk
@@ -593,8 +595,38 @@ class Application():
         self.bt_cadastrar.place(relx= 0.57, rely= 0.82)
         #Botão para fechar a janela:
         self.bt_fechar = Button(self.framecadastro, text='CANCELAR', borderwidth=5, bg='red',
-                                fg='white',font=("Arial", 10), command=self.janela_cadastro.destroy)
+                                fg='white',font=("Arial", 10), command=lambda:self.cancelar(self.janela_cadastro,self.root))
         self.bt_fechar.place(relx= 0.32, rely= 0.82)
+
+
+    def tela_chamado_1(self):
+        largura_tela = self.root.winfo_screenwidth()
+        altura_tela = self.root.winfo_screenheight()
+        tamanho_tela_str = f"{largura_tela}x{altura_tela}".replace(' ', '')
+        #criação da janela cadastrar nota
+        self.janela_chamado_1 = Toplevel(self.root)
+        self.janela_chamado_1.title("Sagaz TEC // CHAMADOS")
+        self.janela_chamado_1.configure(background='#107db2')
+        self.janela_chamado_1.geometry(tamanho_tela_str)
+        self.janela_chamado_1.state('zoomed')
+        self.janela_chamado_1.maxsize(width=largura_tela, height=altura_tela)
+        self.janela_chamado_1.minsize(width=largura_tela, height=altura_tela)
+        self.janela_chamado_1.resizable(True, True)
+        #tornando outras janelas não interativas
+        self.janela_chamado_1.grab_set()
+        #Frame da imagem
+        self.frame_imagem = Frame(self.janela_chamado_1, bg='#107db2')
+        self.frame_imagem.place(relx= 0.82, rely= 0.04, relwidth= 0.17, relheight=0.34)
+        #imagem
+        rotulo_imagem_alterar = tk.Label(self.frame_imagem, image=self.imagem_tk)
+        rotulo_imagem_alterar.place(relx=0.02, rely=0.04)
+        #frame botoes baixo
+        self.frame_botoes = Frame(self.janela_chamado_1, bd=4, bg='#107db2', highlightbackground='#107db2',highlightthickness=2)
+        self.frame_botoes.place(relx= 0.40, rely= 0.80, relwidth= 0.30, relheight=0.10)
+        #botoes
+        bt_cancelar = Button(self.frame_botoes, text="CANCELAR",borderwidth=5, bg='red',fg='white',
+                                 font=("Arial", 10), command=lambda:self.cancelar(self.janela_chamado_1, self.root))
+        bt_cancelar.place(relx=0.10, rely=0.30)
 
 
     #características da tela menú inicial
@@ -720,12 +752,13 @@ class Application():
         self.frame_botoes = Frame(self.janela_excluir, bd=4, bg='#107db2', highlightbackground='#107db2',highlightthickness=2)
         self.frame_botoes.place(relx= 0.40, rely= 0.80, relwidth= 0.30, relheight=0.10)
         #botão excluir selecionado
-        bt_excluir_selecionado = Button(self.frame_botoes, text="EXCLUIR SELECIONADO",borderwidth=5,bg='#107db2',fg='white',
-                                 font=("Arial", 10), command=self.excluir)
+        bt_excluir_selecionado = Button(self.frame_botoes, text="EXCLUIR SELECIONADO",borderwidth=5,bg='#107db2',
+                                        fg='white',font=("Arial", 10), command=self.excluir)
         bt_excluir_selecionado.place(relx=0.42, rely=0.30)
         #botão cancelar
         bt_cancelar = Button(self.frame_botoes, text="CANCELAR",borderwidth=5, bg='red',fg='white',
-                                 font=("Arial", 10), command=self.janela_excluir.destroy)
+                                 font=("Arial", 10), 
+                                 command=lambda:self.cancelar(self.janela_excluir, self.root))
         bt_cancelar.place(relx=0.10, rely=0.30)
         self.carregar_dados_exclusao()
 
@@ -840,7 +873,7 @@ class Application():
                            borderwidth=5, font=('Arial',10), command=self.editar_equipamento)
         bt_editar.place(relx=0.42, rely=0.30)
         bt_cancelar = Button(self.frame_botoes, text="CANCELAR", bg='red', fg='white',
-                             borderwidth=5, font=('Arial',10), command=self.janela_alterar.destroy)
+                             borderwidth=5, font=('Arial',10), command=lambda:self.cancelar(self.janela_alterar,self.root))
         bt_cancelar.place(relx=0.10, rely=0.30)
 
 
@@ -1045,7 +1078,7 @@ class Application():
                             command=lambda: messagebox.showwarning('Atenção','Insira Todos os dados')if not self.nome_editar_entry.get() or not self.categoria_editar_entry.get() else self.salvar_alteracoes(equipamento_id))
         bt_salvar.place(relx=0.55, rely=0.75)
         bt_cancelar = Button(self.janela_editar, text="CANCELAR", borderwidth=5, bg='red',
-                                fg='white',font=("Arial", 10), command=self.janela_editar.destroy)
+                                fg='white',font=("Arial", 10), command=lambda:self.cancelar(self.janela_editar,self.janela_alterar))
         bt_cancelar.place(relx=0.45, rely=0.75)
 
 
@@ -1123,7 +1156,7 @@ class Application():
         self.bt_fiscal.place(relx=0.01, rely=0.45, relwidth=0.15, relheight=0.10)
         #botão de chamados
         self.bt_fiscal = Button(self.frame1, text='CHAMADOS',borderwidth=5,bg='#107db2',fg='white',
-                                font=("Arial", 10))
+                                font=("Arial", 10), command=self.tela_chamado_1)
         self.bt_fiscal.place(relx=0.01, rely=0.60, relwidth=0.15, relheight=0.10)
         #criando o botão para fechar o programa:
         self.bt_fechar = Button(self.frame1, text='FECHAR PROGRAMA',borderwidth=5,bg='red',fg='white',
