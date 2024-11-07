@@ -541,9 +541,11 @@ class Application():
         #imagem
         rotulo_imagem_alterar = tk.Label(self.janela_cadastro, image=self.imagem_tk)
         rotulo_imagem_alterar.place(relx=0.82, rely=0.04)
-        #criação do conteudo da janela:
+        #entry info
+        self.lb_info = Label(self.framecadastro, text='** DADOS OBRIGATÓRIOS',fg='black',font=("Arial", 10))
+        self.lb_info.place(relx=0.50, rely=0.05)
         #criando o campo nome
-        self.lb_nome = Label(self.framecadastro, text='NOME',fg='black',font=("Arial", 10))
+        self.lb_nome = Label(self.framecadastro, text='**NOME',fg='black',font=("Arial", 10))
         self.lb_nome.place(relx=0.15, rely=0.15)
         self.nome_entry = Entry(self.framecadastro, highlightbackground='#107db2', 
                                                 highlightcolor='#107db2', highlightthickness=2)
@@ -567,7 +569,7 @@ class Application():
                                                 highlightcolor='#107db2', highlightthickness=2)
         self.componente_entry.place(relx=0.30, rely=0.45, width=500)
         #criando o campo categoria
-        self.lb_categoria = Label(self.framecadastro, text='CATEGORIA',fg='black',font=("Arial", 10))
+        self.lb_categoria = Label(self.framecadastro, text='**CATEGORIA',fg='black',font=("Arial", 10))
         self.lb_categoria.place(relx=0.15, rely=0.55)
         self.categoria_entry = Entry(self.framecadastro, highlightbackground='#107db2', 
                                                 highlightcolor='#107db2', highlightthickness=2)
@@ -644,7 +646,7 @@ class Application():
         # Conectando ao banco de dados e buscando os dados
         conn = sqlite3.connect(os.path.join(os.path.expanduser("~"), "Documents", "Estoque_TI", "estoque.db"))
         cursor = conn.cursor()
-        cursor.execute("SELECT id, nome, categoria, setor FROM equipamentos")
+        cursor.execute("SELECT id, nome, categoria, setor, usuario FROM equipamentos")
         registros = cursor.fetchall()
         # Inserindo os dados na Treeview
         for registro in registros:
@@ -992,8 +994,12 @@ class Application():
                                   highlightbackground='#98F5FF',highlightthickness=2)
         self.frame_editar.place(relx= 0.28, rely= 0.02, relwidth= 0.50, relheight=0.80)
         # Criar campos para edição (usando valores atuais)
+        #INFO LABEL
+        Label(self.janela_editar, text='** DADOS OBRIGATÓRIOS').place(relx=0.50, rely=0.03)
+        self.nome_editar_entry = Entry(self.janela_editar, highlightbackground='#107db2', 
+                                                highlightcolor='#107db2', highlightthickness=2)
         #nome
-        Label(self.janela_editar, text='NOME').place(relx=0.30, rely=0.07)
+        Label(self.janela_editar, text='**NOME').place(relx=0.30, rely=0.07)
         self.nome_editar_entry = Entry(self.janela_editar, highlightbackground='#107db2', 
                                                 highlightcolor='#107db2', highlightthickness=2)
         self.nome_editar_entry.place(relx=0.38, rely=0.07, width=500)
@@ -1017,7 +1023,7 @@ class Application():
         self.componentes_editar_entry.place(relx=0.38, rely=0.37, width=500)
         self.componentes_editar_entry.insert(0, componentes)
         #Categoria
-        Label(self.janela_editar, text='CATEGORIA').place(relx=0.30, rely=0.47)
+        Label(self.janela_editar, text='**CATEGORIA').place(relx=0.30, rely=0.47)
         self.categoria_editar_entry = Entry(self.janela_editar, highlightbackground='#107db2', 
                                                 highlightcolor='#107db2', highlightthickness=2)
         self.categoria_editar_entry.place(relx=0.38, rely=0.47, width=500)
@@ -1115,6 +1121,10 @@ class Application():
         self.bt_fiscal = Button(self.frame1, text='VINCULAR NOTA FISCAL',borderwidth=5,bg='#107db2',fg='white',
                                 font=("Arial", 10), command=self.tela_nota_fiscal)
         self.bt_fiscal.place(relx=0.01, rely=0.45, relwidth=0.15, relheight=0.10)
+        #botão de chamados
+        self.bt_fiscal = Button(self.frame1, text='CHAMADOS',borderwidth=5,bg='#107db2',fg='white',
+                                font=("Arial", 10))
+        self.bt_fiscal.place(relx=0.01, rely=0.60, relwidth=0.15, relheight=0.10)
         #criando o botão para fechar o programa:
         self.bt_fechar = Button(self.frame1, text='FECHAR PROGRAMA',borderwidth=5,bg='red',fg='white',
                                 font=("Arial", 10), command=self.root.destroy)
@@ -1123,19 +1133,21 @@ class Application():
 
     def lista_frame2(self):
         #criando as colunas da lista do frame2
-        self.listaequip = ttk.Treeview(self.frame2, height=3, columns=('col1', 'col2', 'col3', 'col4'))
+        self.listaequip = ttk.Treeview(self.frame2, height=3, columns=('col1', 'col2', 'col3', 'col4', 'col5'))
         self.carregar_dados()
         self.listaequip.heading('#0', text='')
         self.listaequip.heading('#1', text='ID')
         self.listaequip.heading('#2', text='Nome')
         self.listaequip.heading('#3', text='Categoria')
         self.listaequip.heading('#4', text='Setor')
+        self.listaequip.heading('#5', text='Usuário')
         #posicionando e dimensionando as colunas
         self.listaequip.column('#0', width=1)
-        self.listaequip.column('#1', width=50)
-        self.listaequip.column('#2', width=200)
-        self.listaequip.column('#3', width=200)
-        self.listaequip.column('#4', width=200)
+        self.listaequip.column('#1', width=10)
+        self.listaequip.column('#2', width=50)
+        self.listaequip.column('#3', width=50)
+        self.listaequip.column('#4', width=50)
+        self.listaequip.column('#5', width=50)
         self.listaequip.place(relx=0.01, rely=0.1, relwidth=0.95, relheight=0.85)
         #criando a barra de rolagem
         self.scroll_lista = Scrollbar(self.frame2, orient='vertical', command=self.listaequip.yview)
