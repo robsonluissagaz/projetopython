@@ -9,14 +9,11 @@ from tkinter import filedialog, messagebox
 import shutil
 from PIL import Image, ImageTk
 
-
 pasta_banco = os.path.join(os.path.expanduser("~"), "Documents", "Estoque_TI")
 caminho_do_banco = os.path.join(pasta_banco, "estoque.db")
 caminho_notas_fiscais = os.path.join(pasta_banco, "notas_fiscais.db")
 if not os.path.exists(pasta_banco):
     os.makedirs(pasta_banco)
-
-
 root = Tk()
 
 
@@ -66,18 +63,87 @@ class Application():
         janela_atual.destroy()
         janela_destino.lift()
         janela_destino.grab_set()
-    
+
 
     def abrir_nota(self):
+        # Pasta padrão onde estão armazenadas as notas fiscais
         nota_selecionada = self.lista_cad_nota.selection()
         if not nota_selecionada:
+            messagebox.showwarning("Atenção", "Selecione uma nota para visualizar.")
+            return
+        # Obtem o id e o nome do arquivo selecionado na Treeview
+        nota_id = self.lista_cad_nota.item(nota_selecionada, "values")[0]
+        # Conecta ao banco para buscar o caminho completo da nota fiscal
+        conn = sqlite3.connect(caminho_notas_fiscais)
+        cursor = conn.cursor()
+        cursor.execute("SELECT caminho FROM notas WHERE id = ?", (nota_id,))
+        resultado = cursor.fetchone()
+        conn.close()
+        if resultado:
+            caminho_nota = resultado[0]
+            if os.path.exists(caminho_nota):
+                os.startfile(caminho_nota)
+            else:
+                messagebox.showerror("Erro", "Arquivo não encontrado. Verifique se o caminho está correto.")
+        else:
+            messagebox.showerror("Erro", "Caminho da nota fiscal não encontrado no banco de dados.")
+
+
+    def excluir_nota(self):
+        nota_selecionada = self.lista_cad_nota.selection()
+        if not nota_selecionada:
+            messagebox.showwarning("Atenção", "Selecione uma nota para visualizar.")
+            return
+        # Obtem o id e o nome do arquivo selecionado na Treeview
+        nota_id = self.lista_cad_nota.item(nota_selecionada, "values")[0]
+        # Conecta ao banco para buscar o caminho completo da nota fiscal
+        conn = sqlite3.connect(caminho_notas_fiscais)
+        cursor = conn.cursor()
+        cursor.execute("SELECT caminho FROM notas WHERE id = ?", (nota_id,))
+        resultado = cursor.fetchone()
+        caminho_nota = resultado[0] if resultado else None
+        resposta = messagebox.askyesno("Confirmação", "Tem certeza de que deseja excluir esta nota?")
+        if not resposta:
+            conn.close()
+            return
+        cursor.execute("DELETE FROM notas WHERE id = ?", (nota_id,))
+        conn.commit()
+        conn.close()
+        if caminho_nota and os.path.exists(caminho_nota):
+            try:
+                os.remove(caminho_nota)
+            except Exception as e:
+                messagebox.showwarning("Aviso", f"Não foi possível excluir o arquivo físico: {e}")
+        self.lista_cad_nota.delete(nota_selecionada)
+        messagebox.showinfo("Sucesso", "Nota fiscal excluída com sucesso.")
+
+
+    def carregar_dados_tela_remover_nota_2(self):
+        # Verifica se há um item selecionado na Treeview
+        selected_item = self.lista_excluir_nota.selection()
+        if not selected_item:
             messagebox.showwarning("Atenção", "Selecione um equipamento para visualizar suas notas fiscais.")
             return
-        caminho_nota = self.lista_cad_nota.item(nota_selecionada, "values")[1]
-        if os.path.exists(caminho_nota):
-            os.startfile(caminho_nota)
-        else:
-            messagebox.showerror("Erro", "Arquivo não encontrado. Verifique se o caminho está correto.")
+        # Obtém o ID do equipamento selecionado
+        equipamento_id = self.lista_excluir_nota.item(selected_item, "values")[0]
+        # Consulta o banco de dados para obter as notas fiscais associadas a este equipamento
+        conn = sqlite3.connect(caminho_notas_fiscais)
+        cursor = conn.cursor()
+        cursor.execute("SELECT id, caminho FROM notas WHERE equipamento_id = ?", (equipamento_id,))
+        notas = cursor.fetchall()
+        conn.close()
+        # Verifica se há notas fiscais para o equipamento
+        if not notas:
+            messagebox.showinfo("Informação", "Não há notas fiscais vinculadas a este equipamento.")
+            self.janela_fiscal_remover_2.destroy()
+            self.janela_fiscal_remover.lift()
+            self.janela_fiscal_remover.grab_set()
+        for nota in notas:
+            nota_id = nota[0]
+            caminho_completo = nota[1]
+            if caminho_completo:
+                nome_arquivo = os.path.basename(caminho_completo)
+                self.lista_cad_nota.insert("", "end", values=(nota_id, nome_arquivo))
 
 
     def treeview_tela_eventos_1(self):
@@ -87,7 +153,7 @@ class Application():
         # Conectando ao banco de dados e buscando os dados
         conn = sqlite3.connect(os.path.join(os.path.expanduser("~"), "Documents", "Estoque_TI", "estoque.db"))
         cursor = conn.cursor()
-        cursor.execute("SELECT id, nome, setor FROM equipamentos")
+        cursor.execute("SELECT id, nome, setor, usuario FROM equipamentos")
         registros = cursor.fetchall()
         # Inserindo os dados na Treeview
         for registro in registros:
@@ -137,10 +203,12 @@ class Application():
             self.bt_fiscal_excluir.pack(padx=40, pady=40)
             #cancelar
             self.bt_fiscal_cancelar = Button(self.frame_botoes, text='CANCELAR', borderwidth=5, bg='red',
-                                    fg='white',font=("Arial", 10), command=self.janela_fiscal.destroy)
+                                    fg='white',font=("Arial", 10),
+                                    command=lambda:self.cancelar(self.janela_fiscal, self.root))
             self.bt_fiscal_cancelar.pack(padx=40, pady=40)
         else:
             self.janela_fiscal.lift()
+
 
     def tela_cadastrar_nota(self):
         largura_tela = self.root.winfo_screenwidth()
@@ -378,10 +446,10 @@ class Application():
         for nota in notas:
             nota_id = nota[0]
             caminho_completo = nota[1]
-        if caminho_completo:
-            nome_arquivo = os.path.basename(caminho_completo)
-        self.lista_cad_nota.insert("", "end", values=(nota_id, nome_arquivo))
-        
+            if caminho_completo:
+                nome_arquivo = os.path.basename(caminho_completo)
+                self.lista_cad_nota.insert("", "end", values=(nota_id, nome_arquivo))
+
 
     def tela_remover_nota(self):
         largura_tela = self.root.winfo_screenwidth()
@@ -401,56 +469,118 @@ class Application():
         #imagem
         rotulo_imagem_alterar = tk.Label(self.janela_fiscal_remover, image=self.imagem_tk, bg='#107db2')
         rotulo_imagem_alterar.place(relx=0.82, rely=0.04)
+         #frame_treeview
+        self.frame_treeview = Frame(self.janela_fiscal_remover, bg='#107db2')
+        self.frame_treeview.place(relx= 0.40, rely= 0.10, relwidth= 0.30, relheight=0.70)
         #treeview
-        self.lista_excluir_nota = ttk.Treeview(self.janela_fiscal_remover, height=25, columns=('col1', 'col2'))
-        self.lista_excluir_nota.place(relx= 0.40, rely= 0.09)
+        self.lista_excluir_nota = ttk.Treeview(self.frame_treeview, height=25, columns=('col1', 'col2'))
+        self.lista_excluir_nota.pack(side='bottom', fill='both', expand=True)
         self.lista_excluir_nota.heading('#0', text='')
         self.lista_excluir_nota.heading('#1', text='ID')
         self.lista_excluir_nota.heading('#2', text='Nome Equipamento')
         self.lista_excluir_nota.column('#0', width=1)
         self.lista_excluir_nota.column('#1', width=30)
         self.lista_excluir_nota.column('#2', width=300)
+        self.lista_excluir_nota.pack(pady=20)
         #scrollbar da treeview
-        scroll_excluir_nota = Scrollbar(self.janela_fiscal_remover, orient='vertical', command=self.lista_excluir_nota.yview)
+        scroll_excluir_nota = Scrollbar(self.lista_excluir_nota, orient='vertical', command=self.lista_excluir_nota.yview)
         self.lista_excluir_nota.configure(yscrollcommand=scroll_excluir_nota.set)
-        scroll_excluir_nota.place(relx=0.65, rely=0.09, relwidth=0.02, relheight=0.75)
+        scroll_excluir_nota.pack(side='right', fill='y')
+        #Frame pesquisa
+        self.frame_pesquisa = Frame(self.janela_fiscal_remover, bg='lightblue')
+        self.frame_pesquisa.place(relx= 0.05, rely= 0.10, relwidth= 0.30, relheight=0.70)
         #label pesquisa id
-        self.lb_excluir_id = Label(self.janela_fiscal_remover, text='PESQUISA ID',font=("Arial", 10))
-        self.lb_excluir_id.place(relx=0.04, rely=0.29)
+        self.lb_excluir_id = Label(self.frame_pesquisa, text='PESQUISA ID',font=("Arial", 10))
+        self.lb_excluir_id.pack(padx=10,pady=10)
         #campo pesquisa id
-        self.excluir_id_entry = Entry(self.janela_fiscal_remover, bd=4, highlightbackground='#98F5FF', 
+        self.excluir_id_entry = Entry(self.frame_pesquisa, bd=4, highlightbackground='#98F5FF', 
                                                 highlightcolor='#98F5FF', highlightthickness=3)
-        self.excluir_id_entry.place(relx=0.11, rely=0.29, width=200)
+        self.excluir_id_entry.pack(padx=10,pady=10)
         #botão pesquisa id
-        bt_pesquisa_id = Button(self.janela_fiscal_remover, text="PESQUISAR ID",borderwidth=5,bg='#107db2',fg='white',
+        bt_pesquisa_id = Button(self.frame_pesquisa, text="PESQUISAR ID",borderwidth=5,bg='#107db2',fg='white',
                                  font=("Arial", 10), command=self.pesquisa_id_excluir_notas)
-        bt_pesquisa_id.place(relx=0.26, rely=0.29)
+        bt_pesquisa_id.pack(padx=10,pady=10)
         #label pesquisa nome
-        self.lb_excluir_nome = Label(self.janela_fiscal_remover, text='PESQUISA NOME',font=("Arial", 10))
-        self.lb_excluir_nome.place(relx=0.02, rely=0.40)
+        self.lb_excluir_nome = Label(self.frame_pesquisa, text='PESQUISA NOME',font=("Arial", 10))
+        self.lb_excluir_nome.pack(padx=10,pady=10)
         #campo pesquisa nome
-        self.excluir_nome_entry = Entry(self.janela_fiscal_remover, bd=4, highlightbackground='#98F5FF', 
+        self.excluir_nome_entry = Entry(self.frame_pesquisa, bd=4, highlightbackground='#98F5FF', 
                                                 highlightcolor='#98F5FF', highlightthickness=3)
-        self.excluir_nome_entry.place(relx=0.11, rely=0.40, width=200)
+        self.excluir_nome_entry.pack(padx=10,pady=10)
         #botão pesquisa nome
-        bt_pesquisa_nome = Button(self.janela_fiscal_remover,text="PESQUISAR NOME",borderwidth=5,bg='#107db2',fg='white',
+        bt_pesquisa_nome = Button(self.frame_pesquisa,text="PESQUISAR NOME",borderwidth=5,bg='#107db2',fg='white',
                                  font=("Arial", 10),command=self.pesquisa_nome_excluir_notas)
-        bt_pesquisa_nome.place(relx=0.26, rely=0.40)
+        bt_pesquisa_nome.pack(padx=10,pady=10)
         #Botão resetar treeview
-        bt_reseta_treeview_excluir = Button(self.janela_fiscal_remover, text="RESETAR PESQUISA",
+        bt_reseta_treeview_excluir = Button(self.frame_pesquisa, text="RESETAR PESQUISA",
                                   bg='red', fg='white', borderwidth=5, font=("Arial", 10), command=self.carregar_dados_fiscal)
-        bt_reseta_treeview_excluir.place(relx=0.26, rely=0.50)
+        bt_reseta_treeview_excluir.pack(padx=40,pady=40)
+        #frame botoes baixo
+        self.frame_botoes = Frame(self.janela_fiscal_remover, bd=4, bg='#107db2', highlightbackground='#107db2',highlightthickness=2)
+        self.frame_botoes.place(relx= 0.40, rely= 0.80, relwidth= 0.30, relheight=0.10)
         #botão excluir selecionado
-        bt_excluir_selecionado = Button(self.janela_fiscal_remover, text="SELECIONAR",borderwidth=5,bg='#107db2',fg='white',
-                                 font=("Arial", 10), command=self.excluir)
-        bt_excluir_selecionado.place(relx=0.53, rely=0.90)
+        bt_excluir_selecionado = Button(self.frame_botoes, text="SELECIONAR",borderwidth=5,bg='#107db2',fg='white',
+                                 font=("Arial", 10), command=self.tela_remover_nota_2)
+        bt_excluir_selecionado.place(relx=0.42, rely=0.30)
         #botão cancelar
-        bt_cancelar = Button(self.janela_fiscal_remover, text="CANCELAR",borderwidth=5, bg='red',fg='white',
-                                 font=("Arial", 10),
-                                 command=lambda:self.cancelar(self.janela_fiscal_remover,self.janela_fiscal))
-        bt_cancelar.place(relx=0.42, rely=0.90)
+        bt_cancelar = Button(self.frame_botoes, text="CANCELAR",borderwidth=5, bg='red',fg='white',
+                                 font=("Arial", 10), command=lambda:self.cancelar(self.janela_fiscal_remover, self.janela_fiscal))
+        bt_cancelar.place(relx=0.10, rely=0.30)
         self.carregar_dados_fiscal()
 
+
+    def tela_remover_nota_2(self):
+        largura_tela = self.root.winfo_screenwidth()
+        altura_tela = self.root.winfo_screenheight()
+        tamanho_tela_str = f"{largura_tela}x{altura_tela}".replace(' ', '')
+        self.janela_fiscal_remover_2 = Toplevel(self.root)
+        self.janela_fiscal_remover_2.title("Sagaz TEC // EXCLUIR NOTAS")
+        self.janela_fiscal_remover_2.configure(background='#107db2')
+        self.janela_fiscal_remover_2.geometry(tamanho_tela_str)
+        self.janela_fiscal_remover_2.state('zoomed')
+        self.janela_fiscal_remover_2.maxsize(width=largura_tela, height=altura_tela)
+        self.janela_fiscal_remover_2.minsize(width=largura_tela, height=altura_tela)
+        self.janela_fiscal_remover_2.resizable(True, True)
+        #tornando outras janelas não interativas
+        self.janela_fiscal_remover_2.grab_set()
+        #Frame da imagem
+        self.frame_imagem = Frame(self.janela_fiscal_remover_2, bg='#107db2')
+        self.frame_imagem.place(relx= 0.82, rely= 0.04, relwidth= 0.17, relheight=0.34)
+        #imagem
+        rotulo_imagem_alterar = tk.Label(self.frame_imagem, image=self.imagem_tk, bg='#107db2')
+        rotulo_imagem_alterar.place(relx=0.02, rely=0.04)
+        #frame_treeview
+        self.frame_treeview = Frame(self.janela_fiscal_remover_2, bg='#107db2')
+        self.frame_treeview.place(relx= 0.40, rely= 0.10, relwidth= 0.30, relheight=0.70)
+        #treeview
+        self.lista_cad_nota = ttk.Treeview(self.frame_treeview, height=25, columns=('col1', 'col2'))
+        self.lista_cad_nota.pack(side='bottom', fill='both', expand=True)
+        self.lista_cad_nota.heading('#0', text='')
+        self.lista_cad_nota.heading('#1', text='ID')
+        self.lista_cad_nota.heading('#2', text='Nota')
+        self.lista_cad_nota.column('#0', width=1)
+        self.lista_cad_nota.column('#1', width=30)
+        self.lista_cad_nota.column('#2', width=400)
+        self.lista_cad_nota.pack(pady=20)
+        #scrollbar da treeview
+        scroll_cad_nota = Scrollbar(self.lista_cad_nota, orient='vertical', command=self.lista_cad_nota.yview)
+        self.lista_cad_nota.configure(yscrollcommand=scroll_cad_nota.set)
+        scroll_cad_nota.pack(side='right', fill='y')
+        #frame botoes baixo
+        self.frame_botoes = Frame(self.janela_fiscal_remover_2, bd=4, bg='#107db2', highlightbackground='#107db2',highlightthickness=2)
+        self.frame_botoes.place(relx= 0.40, rely= 0.80, relwidth= 0.30, relheight=0.10)
+        #botoes
+        #Abrir Notas
+        self.bt_abrir_nota = Button(self.frame_botoes, text='EXCLUIR NOTA',borderwidth=5,
+                                bg='#107db2',fg='white', font=("Arial", 10), command=self.excluir_nota)
+        self.bt_abrir_nota.place(relx=0.42, rely=0.30)
+        #Cancelar
+        self.bt_cancelar = Button(self.frame_botoes, text='CANCELAR',borderwidth=5,
+                                bg='red',fg='white',font=("Arial", 10),
+                                command=lambda:self.cancelar(self.janela_fiscal_remover_2,self.janela_fiscal_remover))
+        self.bt_cancelar.place(relx=0.10, rely=0.30)
+        self.carregar_dados_tela_remover_nota_2()
+        
 
     def pesquisa_id_excluir_notas(self):
             # Limpar o Treeview
@@ -641,18 +771,20 @@ class Application():
         rotulo_imagem_alterar.place(relx=0.02, rely=0.04)
         #frame_treeview
         self.frame_treeview = Frame(self.janela_eventos_1, bg='#107db2')
-        self.frame_treeview.place(relx= 0.40, rely= 0.10, relwidth= 0.30, relheight=0.70)
+        self.frame_treeview.place(relx= 0.40, rely= 0.10, relwidth= 0.40, relheight=0.70)
         # Treeview
-        self.lista_excluir_nota = ttk.Treeview(self.frame_treeview, height=25, columns=('col1', 'col2', 'col3'))
+        self.lista_excluir_nota = ttk.Treeview(self.frame_treeview, height=25, columns=('col1', 'col2', 'col3', 'col4'))
         self.lista_excluir_nota.pack(side='bottom', fill='both', expand=True)
         self.lista_excluir_nota.heading('#0', text='')
         self.lista_excluir_nota.heading('#1', text='ID')
         self.lista_excluir_nota.heading('#2', text='Nome Equipamento')
         self.lista_excluir_nota.heading('#3', text='Setor Equipamento')
+        self.lista_excluir_nota.heading('#4', text='Usuário')
         self.lista_excluir_nota.column('#0', width=1)
         self.lista_excluir_nota.column('#1', width=30)
-        self.lista_excluir_nota.column('#2', width=200)
-        self.lista_excluir_nota.column('#3', width=200)
+        self.lista_excluir_nota.column('#2', width=100)
+        self.lista_excluir_nota.column('#3', width=100)
+        self.lista_excluir_nota.column('#4', width=100)
         self.lista_excluir_nota.pack(pady=20)
         #scrollbar da treeview
         scroll_excluir_nota = Scrollbar(self.lista_excluir_nota, orient='vertical', command=self.lista_excluir_nota.yview)
@@ -693,7 +825,7 @@ class Application():
         bt_reseta_treeview.pack(padx=40,pady=40)
         #botão Cadastrar nota selecionado
         bt_nota_selecionado = Button(self.frame_botoes, text="VISUALIZAR EVENTOS",
-                                        borderwidth=5,bg='#107db2',fg='white',font=("Arial", 10))
+                                        borderwidth=5,bg='#107db2',fg='white',font=("Arial", 10), command=self.tela_eventos_2)
         bt_nota_selecionado.place(relx=0.53, rely=0.30)
         #Botão cancelar
         bt_cancelar = Button(self.frame_botoes, text="CANCELAR",borderwidth=5, bg='red',fg='white',
@@ -701,6 +833,31 @@ class Application():
         bt_cancelar.place(relx=0.10, rely=0.30)
         self.treeview_tela_eventos_1()
 
+
+    def tela_eventos_2(self):
+        largura_tela = self.root.winfo_screenwidth()
+        altura_tela = self.root.winfo_screenheight()
+        tamanho_tela_str = f"{largura_tela}x{altura_tela}".replace(' ', '')
+        #criação da janela cadastrar nota
+        self.janela_eventos_2 = Toplevel(self.root)
+        self.janela_eventos_2.title("Sagaz TEC // VISUALIZAÇÃO DE EVENTOS")
+        self.janela_eventos_2.configure(background='#107db2')
+        self.janela_eventos_2.geometry(tamanho_tela_str)
+        self.janela_eventos_2.state('zoomed')
+        self.janela_eventos_2.maxsize(width=largura_tela, height=altura_tela)
+        self.janela_eventos_2.minsize(width=largura_tela, height=altura_tela)
+        self.janela_eventos_2.resizable(True, True)
+        #tornando outras janelas não interativas
+        self.janela_eventos_2.grab_set()
+        #Frame da imagem
+        self.frame_imagem = Frame(self.janela_eventos_2, bg='#107db2')
+        self.frame_imagem.place(relx= 0.82, rely= 0.04, relwidth= 0.17, relheight=0.34)
+        #imagem
+        rotulo_imagem_alterar = tk.Label(self.frame_imagem, image=self.imagem_tk, bg='#107db2')
+        rotulo_imagem_alterar.place(relx=0.02, rely=0.04)
+        #frame_treeview
+        self.frame_treeview = Frame(self.janela_eventos_2, bg='#107db2')
+        self.frame_treeview.place(relx= 0.40, rely= 0.10, relwidth= 0.40, relheight=0.70)
 
 
     def tela_chamado_1(self):
@@ -750,7 +907,7 @@ class Application():
     def salvar_alteracoes(self, equipamento_id):
         nome = self.nome_editar_entry.get().upper()
         setor = self.setor_editar_entry.get().upper() or 'SEM REGISTRO'
-        usuario = self.usuario_editar_entry.get().upper() or 'SEM REGISTRO'
+        usuario = self.usuario_editar_entry.get() or 'SEM REGISTRO'
         componentes = self.componentes_editar_entry.get().upper() or 'SEM REGISTRO'
         categoria = self.categoria_editar_entry.get().upper()
         key = self.key_editar_entry.get().upper() or 'SEM REGISTRO'
@@ -874,6 +1031,7 @@ class Application():
             return
         valores_item = self.lista_excluir.item(selecionado, 'values')
         id_equipamento = valores_item[0]
+        nome_equipamento = valores_item[1]
         confirmar = messagebox.askyesno("Confirmação", "Tem certeza que deseja excluir este equipamento?")
         if confirmar:
             try:
@@ -889,7 +1047,7 @@ class Application():
                     if self.listaequip.item(item, 'values')[0] == id_equipamento:
                         self.listaequip.delete(item)
                         break
-                print(f"Equipamento com ID {id_equipamento} excluído.")
+                messagebox.showinfo('Sucesso', f"Equipamento {nome_equipamento} excluído.")
             except sqlite3.Error as e:
                 print(f"Erro ao excluir equipamento: {e}")
         else:
@@ -1255,7 +1413,7 @@ class Application():
                                  font=("Arial", 10), command=self.tela_excluir)
         self.bt_excluir.place(relx=0.01, rely=0.30, relwidth=0.15, relheight=0.10)
         #criando o botão de vincular nota fiscal:
-        self.bt_fiscal = Button(self.frame1, text='VINCULAR NOTA FISCAL',borderwidth=5,bg='#107db2',fg='white',
+        self.bt_fiscal = Button(self.frame1, text='NOTAS FISCAIS',borderwidth=5,bg='#107db2',fg='white',
                                 font=("Arial", 10), command=self.tela_nota_fiscal)
         self.bt_fiscal.place(relx=0.01, rely=0.45, relwidth=0.15, relheight=0.10)
         #botão de chamados
