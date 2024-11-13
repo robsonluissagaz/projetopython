@@ -8,6 +8,7 @@ import os
 from tkinter import filedialog, messagebox
 import shutil
 from PIL import Image, ImageTk
+import win32evtlog
 
 pasta_banco = os.path.join(os.path.expanduser("~"), "Documents", "Estoque_TI")
 caminho_do_banco = os.path.join(pasta_banco, "estoque.db")
@@ -57,6 +58,53 @@ class Application():
         self.widgets_frame1()
         self.lista_frame2()
         root.mainloop()
+
+
+    def carregar_logs_eventos(self):
+        # Conectando ao log de eventos do Windows
+        server = 'localhost'
+        log_type = 'System'  # ou 'Application', 'Security', etc.
+        log_handle = win32evtlog.OpenEventLog(server, log_type)
+        # Definindo o número de eventos a serem lidos
+        flags = win32evtlog.EVENTLOG_BACKWARDS_READ | win32evtlog.EVENTLOG_SEQUENTIAL_READ
+        total = win32evtlog.GetNumberOfEventLogRecords(log_handle)
+        # Dicionário para mapear os tipos de eventos
+        event_type_map = {
+            1: "Erro",
+            2: "Aviso",
+            4: "Informação"
+        }
+        # Lendo os eventos
+        events = win32evtlog.ReadEventLog(log_handle, flags, 0)
+        # Populando a Treeview com o ID do evento, tipo e descrição
+        for event in events:
+            event_id = event.EventID & 0xFFFF  # Máscara para obter o ID correto
+            event_type = event.EventType
+            # Mapeando o tipo de evento usando o dicionário
+            event_type_str = event_type_map.get(event_type, "Desconhecido")
+            # Obtendo a descrição
+            description = str(event.StringInserts) if event.StringInserts else "Sem descrição"
+            # Inserindo os dados na Treeview
+            self.tree.insert("", "end", values=(event_id, event_type_str, description))
+        # Fechar o handle do log
+        win32evtlog.CloseEventLog(log_handle)
+
+
+    def ver_eventos(self):
+        selected_item = self.lista_excluir_nota.selection()
+        if not selected_item:
+            messagebox.showwarning("Atenção", "Selecione um usuário.")
+            return
+        item_values = self.lista_excluir_nota.item(selected_item[0], "values")
+        nome_usuario = item_values[3]
+        caminho_log = os.path.join(f"\\\\{nome_usuario}", "C$", "Windows", "System32", "winevt", "Logs")
+        try:
+            if os.path.exists(caminho_log):
+                os.startfile(caminho_log)
+            else:
+                messagebox.showerror("Erro", f"O caminho do log não foi encontrado para o usuário {nome_usuario}.")
+        except Exception as e:
+            messagebox.showerror("Erro", f"Não foi possível acessar os eventos do usuário {nome_usuario}.\nErro: {e}")
 
 
     def cancelar(self, janela_atual, janela_destino):
@@ -857,7 +905,18 @@ class Application():
         rotulo_imagem_alterar.place(relx=0.02, rely=0.04)
         #frame_treeview
         self.frame_treeview = Frame(self.janela_eventos_2, bg='#107db2')
-        self.frame_treeview.place(relx= 0.40, rely= 0.10, relwidth= 0.40, relheight=0.70)
+        self.frame_treeview.place(relx= 0.10, rely= 0.10, relwidth= 0.70, relheight=0.70)
+        #Treeview
+        self.tree = ttk.Treeview(self.frame_treeview, columns=("ID", "Tipo", "Descrição"), show="headings")
+        self.tree.heading("ID", text="ID do Evento")
+        self.tree.heading("Tipo", text="Tipo")
+        self.tree.heading("Descrição", text="Descrição")
+        self.tree.pack(fill="both", expand=True)
+        #scrollbar da treeview
+        scroll_excluir = Scrollbar(self.frame_treeview, orient="horizontal", command=self.tree.xview)
+        self.tree.configure(xscrollcommand=scroll_excluir.set)
+        scroll_excluir.pack(side='bottom', fill='x')
+        self.carregar_logs_eventos()
 
 
     def tela_chamado_1(self):
@@ -1421,7 +1480,7 @@ class Application():
                                 font=("Arial", 10), command=self.tela_chamado_1)
         self.bt_chamado.place(relx=0.01, rely=0.60, relwidth=0.15, relheight=0.10)
         #botão de eventos
-        self.bt_eventos = Button(self.frame1, text='EVENTOS',borderwidth=5,bg='#107db2',fg='white',
+        self.bt_eventos = Button(self.frame1, text='LOG DE EVENTOS',borderwidth=5,bg='#107db2',fg='white',
                                 font=("Arial", 10), command=self.tela_eventos_1)
         self.bt_eventos.place(relx=0.01, rely=0.75, relwidth=0.15, relheight=0.10)
         #criando o botão para fechar o programa:
