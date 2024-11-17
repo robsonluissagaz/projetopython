@@ -1,5 +1,6 @@
-import imaplib
-import email
+from imapclient import IMAPClient
+import imapclient
+import pyzmail
 from tkinter import *
 import tkinter as tk
 from tkinter import ttk
@@ -60,20 +61,72 @@ class Application():
         root.mainloop()
 
 
+    def exibir_conteudo(self, event):
+            # Pega o item selecionado na Treeview
+            selecionado = self.tree.selection()
+            if selecionado:
+                # Obtém os valores do item selecionado
+                item = self.tree.item(selecionado)
+                remetente, assunto, _ = item["values"]
+
+                # Procura o conteúdo do e-mail usando a chave de remetente e assunto
+                chave = remetente + assunto
+                if chave in self.mensagens_dict:
+                    conteudo_email = self.mensagens_dict[chave]["conteudo"]
+
+                    # Exibe o conteúdo do e-mail na área de texto
+                    self.texto_conteudo.config(state=tk.NORMAL)  # Ativa o estado de edição
+                    self.texto_conteudo.delete(1.0, tk.END)  # Limpa o conteúdo atual
+                    self.texto_conteudo.insert(tk.END, conteudo_email)  # Insere o conteúdo do e-mail
+                    self.texto_conteudo.config(state=tk.DISABLED)  # Desativa o estado de edição
+                else:
+                    messagebox.showerror("Erro", "Conteúdo do e-mail não encontrado.")
+
+
+    def carregar_chamados(self):
+        try:
+            EMAIL = "robsonluissagaz@gmail.com"
+            PASSWORD = "bglm wtar tswo atyy"
+            SERVER = "imap.gmail.com"
+            # Conexão com o servidor IMAP
+            mail_client = IMAPClient(SERVER, ssl=True)
+            mail_client.login(EMAIL, PASSWORD)
+            # Selecionar a pasta "Chamados"
+            mail_client.select_folder("Chamados", readonly=True)
+            # Buscar todas as mensagens
+            mensagens = mail_client.search(["ALL"])
+            # Armazenar os UIDs das mensagens
+            self.mensagens_dict = {}
+            # Processar mensagens e adicionar na Treeview
+            for uid in mensagens:
+                mensagem_raw = mail_client.fetch([uid], ["BODY[]", "FLAGS"])
+                mensagem = pyzmail.PyzMessage.factory(mensagem_raw[uid][b"BODY[]"])
+                remetente = mensagem.get_address("from")[1]
+                assunto = mensagem.get_subject() or "Sem Assunto"
+                data = mensagem.get_decoded_header("date")
+                self.mensagens_dict[remetente + assunto] = {
+                    "uid": uid,
+                    "conteudo": mensagem.text_part.get_payload().decode(mensagem.text_part.charset)
+                }
+                # Inserir na Treeview
+                self.tree.insert("", "end", values=(remetente, assunto, data))
+            # Fechar a conexão
+            mail_client.logout()
+        except Exception as e:
+            messagebox.showerror("Erro", f"Não foi possível carregar os chamados.\n{str(e)}")
+
+
     def carregar_logs_eventos(self):
+        item_selecionado = self.lista_excluir_nota.selection()
         # Conectando ao log de eventos do Windows
-        server = 'localhost'
-        log_type = 'System'  # ou 'Application', 'Security', etc.
+        item_valores = self.lista_excluir_nota.item(item_selecionado[0], "values")
+        server = item_valores[3]
+        log_type = 'Security'#,'Application', 'Security'
         log_handle = win32evtlog.OpenEventLog(server, log_type)
         # Definindo o número de eventos a serem lidos
         flags = win32evtlog.EVENTLOG_BACKWARDS_READ | win32evtlog.EVENTLOG_SEQUENTIAL_READ
-        total = win32evtlog.GetNumberOfEventLogRecords(log_handle)
         # Dicionário para mapear os tipos de eventos
-        event_type_map = {
-            1: "Erro",
-            2: "Aviso",
-            4: "Informação"
-        }
+        event_type_map = {1: "Erro", 2: "Aviso", 4: "Informação"}
         # Lendo os eventos
         events = win32evtlog.ReadEventLog(log_handle, flags, 0)
         # Populando a Treeview com o ID do evento, tipo e descrição
@@ -908,9 +961,12 @@ class Application():
         self.frame_treeview.place(relx= 0.10, rely= 0.10, relwidth= 0.70, relheight=0.70)
         #Treeview
         self.tree = ttk.Treeview(self.frame_treeview, columns=("ID", "Tipo", "Descrição"), show="headings")
-        self.tree.heading("ID", text="ID do Evento")
+        self.tree.heading("ID", text="ID")
         self.tree.heading("Tipo", text="Tipo")
         self.tree.heading("Descrição", text="Descrição")
+        self.tree.column("ID", width=10)
+        self.tree.column("Tipo", width=30)
+        self.tree.column("Descrição", width=800)
         self.tree.pack(fill="both", expand=True)
         #scrollbar da treeview
         scroll_excluir = Scrollbar(self.frame_treeview, orient="horizontal", command=self.tree.xview)
@@ -940,6 +996,29 @@ class Application():
         #imagem
         rotulo_imagem_alterar = tk.Label(self.frame_imagem, image=self.imagem_tk, bg='#107db2')
         rotulo_imagem_alterar.place(relx=0.02, rely=0.04)
+        #frame_treeview
+        self.frame_treeview = Frame(self.janela_chamado_1, bg='#107db2')
+        self.frame_treeview.place(relx= 0.01, rely= 0.10, relwidth= 0.50, relheight=0.70)
+        #Treeview
+        self.tree = ttk.Treeview(self.frame_treeview, columns=("Remetente", "Assunto", "Data"), show="headings")
+        self.tree.heading("Remetente", text="Remetente")
+        self.tree.heading("Assunto", text="Assunto")
+        self.tree.heading("Data", text="Data")
+        self.tree.column("Remetente", width=100)
+        self.tree.column("Assunto", width=50)
+        self.tree.column("Data", width=50)
+        self.tree.pack(fill="both", expand=True)
+        self.tree.bind("<<TreeviewSelect>>", self.exibir_conteudo)
+        #scrollbar da treeview
+        scrollbar = tk.Scrollbar(self.tree, orient="vertical", command=self.tree.yview)
+        scrollbar.pack(side="right", fill="y")
+        self.tree.configure(yscrollcommand=scrollbar.set)
+        #frame conteudo
+        self.frame_mensagens = Frame(self.janela_chamado_1, bg='#107db2')
+        self.frame_mensagens.place(relx=0.52,rely=0.10, relwidth= 0.30, relheight=0.70)
+        #treeview das mensagens
+        self.texto_conteudo = tk.Text(self.frame_mensagens, wrap=tk.WORD, state=tk.DISABLED)
+        self.texto_conteudo.pack(fill="both", expand=True)
         #frame botoes baixo
         self.frame_botoes = Frame(self.janela_chamado_1, bd=4, bg='#107db2', highlightbackground='#107db2',highlightthickness=2)
         self.frame_botoes.place(relx= 0.40, rely= 0.80, relwidth= 0.30, relheight=0.10)
@@ -947,6 +1026,7 @@ class Application():
         bt_cancelar = Button(self.frame_botoes, text="CANCELAR",borderwidth=5, bg='red',fg='white',
                                  font=("Arial", 10), command=lambda:self.cancelar(self.janela_chamado_1, self.root))
         bt_cancelar.place(relx=0.10, rely=0.30)
+        self.carregar_chamados()
 
 
     #características da tela menú inicial
