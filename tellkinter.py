@@ -1,5 +1,4 @@
 from imapclient import IMAPClient
-import imapclient
 import pyzmail
 from tkinter import *
 import tkinter as tk
@@ -10,6 +9,7 @@ from tkinter import filedialog, messagebox
 import shutil
 from PIL import Image, ImageTk
 import win32evtlog
+import threading
 
 pasta_banco = os.path.join(os.path.expanduser("~"), "Documents", "Estoque_TI")
 caminho_do_banco = os.path.join(pasta_banco, "estoque.db")
@@ -49,7 +49,6 @@ def banco_notas():
 
 
 class Application():
-    #tela do menú inicial
     def __init__(self):
         self.root = root
         self.imagem = Image.open("sagaztec.png")
@@ -61,26 +60,69 @@ class Application():
         root.mainloop()
 
 
+    def marcar_como_lixo(self):
+        try:
+            item_selecionado = self.tree.focus()
+            if not item_selecionado:
+                messagebox.showwarning("Atenção", "Selecione um e-mail para marcar como Lixo.")
+                return
+            uid = int(item_selecionado)
+            EMAIL = "robsonluissagaz@gmail.com"
+            PASSWORD = "bglm wtar tswo atyy"
+            SERVER = "imap.gmail.com"
+            with IMAPClient(SERVER, ssl=True) as mail_client:
+                mail_client.login(EMAIL, PASSWORD)
+                mail_client.select_folder("Resolvidos")
+                mail_client.move([uid], "Lixeira")
+            self.tree.delete(item_selecionado)
+            del self.mensagens_dict[str(uid)]
+            self.texto_conteudo.configure(state=tk.NORMAL)
+            self.texto_conteudo.delete("1.0", tk.END)
+            self.texto_conteudo.configure(state=tk.DISABLED)
+            messagebox.showinfo("Sucesso", "O e-mail foi movido para 'Lixeira'.")
+        except Exception as e:
+            messagebox.showerror("Erro", f"Não foi possível mover o e-mail para 'Lixeira'.\n{str(e)}")
+
+
+    def marcar_como_resolvido(self):
+        try:
+            item_selecionado = self.tree.focus()
+            if not item_selecionado:
+                messagebox.showwarning("Atenção", "Selecione um e-mail para marcar como resolvido.")
+                return
+            uid = int(item_selecionado)
+            EMAIL = "robsonluissagaz@gmail.com"
+            PASSWORD = "bglm wtar tswo atyy"
+            SERVER = "imap.gmail.com"
+            with IMAPClient(SERVER, ssl=True) as mail_client:
+                mail_client.login(EMAIL, PASSWORD)
+                mail_client.select_folder("Chamados")
+                mail_client.move([uid], "Resolvidos")
+            self.tree.delete(item_selecionado)
+            del self.mensagens_dict[str(uid)]
+            self.texto_conteudo.configure(state=tk.NORMAL)
+            self.texto_conteudo.delete("1.0", tk.END)
+            self.texto_conteudo.configure(state=tk.DISABLED)
+            messagebox.showinfo("Sucesso", "O e-mail foi movido para 'Resolvidos'.")
+        except Exception as e:
+            messagebox.showerror("Erro", f"Não foi possível mover o e-mail para 'Resolvidos'.\n{str(e)}")
+
+
     def exibir_conteudo(self, event):
-            # Pega o item selecionado na Treeview
+        try:
             selecionado = self.tree.selection()
             if selecionado:
-                # Obtém os valores do item selecionado
-                item = self.tree.item(selecionado)
-                remetente, assunto, _ = item["values"]
-
-                # Procura o conteúdo do e-mail usando a chave de remetente e assunto
-                chave = remetente + assunto
-                if chave in self.mensagens_dict:
-                    conteudo_email = self.mensagens_dict[chave]["conteudo"]
-
-                    # Exibe o conteúdo do e-mail na área de texto
-                    self.texto_conteudo.config(state=tk.NORMAL)  # Ativa o estado de edição
-                    self.texto_conteudo.delete(1.0, tk.END)  # Limpa o conteúdo atual
-                    self.texto_conteudo.insert(tk.END, conteudo_email)  # Insere o conteúdo do e-mail
-                    self.texto_conteudo.config(state=tk.DISABLED)  # Desativa o estado de edição
+                uid = selecionado[0]
+                if uid in self.mensagens_dict:
+                    conteudo_email = self.mensagens_dict[uid]["conteudo"]
+                    self.texto_conteudo.config(state=tk.NORMAL)
+                    self.texto_conteudo.delete(1.0, tk.END)
+                    self.texto_conteudo.insert(tk.END, conteudo_email)
+                    self.texto_conteudo.config(state=tk.DISABLED)
                 else:
                     messagebox.showerror("Erro", "Conteúdo do e-mail não encontrado.")
+        except Exception as e:
+            messagebox.showerror("Erro", f"Erro ao exibir o conteúdo do e-mail:\n{e}")
 
 
     def carregar_chamados(self):
@@ -88,58 +130,92 @@ class Application():
             EMAIL = "robsonluissagaz@gmail.com"
             PASSWORD = "bglm wtar tswo atyy"
             SERVER = "imap.gmail.com"
-            # Conexão com o servidor IMAP
-            mail_client = IMAPClient(SERVER, ssl=True)
-            mail_client.login(EMAIL, PASSWORD)
-            # Selecionar a pasta "Chamados"
-            mail_client.select_folder("Chamados", readonly=True)
-            # Buscar todas as mensagens
-            mensagens = mail_client.search(["ALL"])
-            # Armazenar os UIDs das mensagens
-            self.mensagens_dict = {}
-            # Processar mensagens e adicionar na Treeview
-            for uid in mensagens:
-                mensagem_raw = mail_client.fetch([uid], ["BODY[]", "FLAGS"])
-                mensagem = pyzmail.PyzMessage.factory(mensagem_raw[uid][b"BODY[]"])
-                remetente = mensagem.get_address("from")[1]
-                assunto = mensagem.get_subject() or "Sem Assunto"
-                data = mensagem.get_decoded_header("date")
-                self.mensagens_dict[remetente + assunto] = {
-                    "uid": uid,
-                    "conteudo": mensagem.text_part.get_payload().decode(mensagem.text_part.charset)
-                }
-                # Inserir na Treeview
-                self.tree.insert("", "end", values=(remetente, assunto, data))
-            # Fechar a conexão
-            mail_client.logout()
+            with IMAPClient(SERVER, ssl=True) as mail_client:
+                mail_client.login(EMAIL, PASSWORD)
+                mail_client.select_folder("Chamados", readonly=True)
+                mensagens = mail_client.search(["ALL"])
+                self.mensagens_dict = {}
+                for item in self.tree.get_children():
+                    self.tree.delete(item)
+                for uid in mensagens:
+                    mensagem_raw = mail_client.fetch([uid], ["BODY[]", "FLAGS"])
+                    mensagem = pyzmail.PyzMessage.factory(mensagem_raw[uid][b"BODY[]"])
+                    remetente = mensagem.get_address("from")[1]
+                    assunto = mensagem.get_subject() or "Sem Assunto"
+                    data = mensagem.get_decoded_header("date")
+                    conteudo = "Sem conteúdo disponível"
+                    if mensagem.text_part:
+                        try:
+                            conteudo = mensagem.text_part.get_payload().decode(mensagem.text_part.charset)
+                        except Exception:
+                            conteudo = "Erro ao decodificar o conteúdo."
+                    self.mensagens_dict[f"{uid}"] = {
+                        "remetente": remetente,
+                        "assunto": assunto,
+                        "conteudo": conteudo,
+                        "data": data,}
+                    self.tree.insert("", "end", iid=uid, values=(remetente, assunto, data))
+        except Exception as e:
+            messagebox.showerror("Erro", f"Não foi possível carregar os chamados.\n{str(e)}")
+    
+
+    def carregar_chamados_resolvidos(self):
+        try:
+            EMAIL = "robsonluissagaz@gmail.com"
+            PASSWORD = "bglm wtar tswo atyy"
+            SERVER = "imap.gmail.com"
+            with IMAPClient(SERVER, ssl=True) as mail_client:
+                mail_client.login(EMAIL, PASSWORD)
+                mail_client.select_folder("Resolvidos", readonly=True)
+                mensagens = mail_client.search(["ALL"])
+                self.mensagens_dict = {}
+                for item in self.tree.get_children():
+                    self.tree.delete(item)
+                for uid in mensagens:
+                    mensagem_raw = mail_client.fetch([uid], ["BODY[]", "FLAGS"])
+                    mensagem = pyzmail.PyzMessage.factory(mensagem_raw[uid][b"BODY[]"])
+                    remetente = mensagem.get_address("from")[1]
+                    assunto = mensagem.get_subject() or "Sem Assunto"
+                    data = mensagem.get_decoded_header("date")
+                    conteudo = "Sem conteúdo disponível"
+                    if mensagem.text_part:
+                        try:
+                            conteudo = mensagem.text_part.get_payload().decode(mensagem.text_part.charset)
+                        except Exception:
+                            conteudo = "Erro ao decodificar o conteúdo."
+                    self.mensagens_dict[f"{uid}"] = {
+                        "remetente": remetente,
+                        "assunto": assunto,
+                        "conteudo": conteudo,
+                        "data": data,}
+                    self.tree.insert("", "end", iid=uid, values=(remetente, assunto, data))
         except Exception as e:
             messagebox.showerror("Erro", f"Não foi possível carregar os chamados.\n{str(e)}")
 
 
+    def carregar_chamados_em_thread(self):
+        threading.Thread(target=self.carregar_chamados, daemon=True).start()
+    
+
+    def carregar_resolvidos_em_thread(self):
+        threading.Thread(target=self.carregar_chamados_resolvidos, daemon=True).start()
+
+
     def carregar_logs_eventos(self):
         item_selecionado = self.lista_excluir_nota.selection()
-        # Conectando ao log de eventos do Windows
         item_valores = self.lista_excluir_nota.item(item_selecionado[0], "values")
         server = item_valores[3]
-        log_type = 'Security'#,'Application', 'Security'
+        log_type = 'Segurança'#,'Application', 'Security'
         log_handle = win32evtlog.OpenEventLog(server, log_type)
-        # Definindo o número de eventos a serem lidos
         flags = win32evtlog.EVENTLOG_BACKWARDS_READ | win32evtlog.EVENTLOG_SEQUENTIAL_READ
-        # Dicionário para mapear os tipos de eventos
-        event_type_map = {1: "Erro", 2: "Aviso", 4: "Informação"}
-        # Lendo os eventos
+        event_type_map = {1: "Erro", 2: "Aviso", 4: "Nível"}
         events = win32evtlog.ReadEventLog(log_handle, flags, 0)
-        # Populando a Treeview com o ID do evento, tipo e descrição
         for event in events:
             event_id = event.EventID & 0xFFFF  # Máscara para obter o ID correto
             event_type = event.EventType
-            # Mapeando o tipo de evento usando o dicionário
             event_type_str = event_type_map.get(event_type, "Desconhecido")
-            # Obtendo a descrição
             description = str(event.StringInserts) if event.StringInserts else "Sem descrição"
-            # Inserindo os dados na Treeview
             self.tree.insert("", "end", values=(event_id, event_type_str, description))
-        # Fechar o handle do log
         win32evtlog.CloseEventLog(log_handle)
 
 
@@ -167,14 +243,11 @@ class Application():
 
 
     def abrir_nota(self):
-        # Pasta padrão onde estão armazenadas as notas fiscais
         nota_selecionada = self.lista_cad_nota.selection()
         if not nota_selecionada:
             messagebox.showwarning("Atenção", "Selecione uma nota para visualizar.")
             return
-        # Obtem o id e o nome do arquivo selecionado na Treeview
         nota_id = self.lista_cad_nota.item(nota_selecionada, "values")[0]
-        # Conecta ao banco para buscar o caminho completo da nota fiscal
         conn = sqlite3.connect(caminho_notas_fiscais)
         cursor = conn.cursor()
         cursor.execute("SELECT caminho FROM notas WHERE id = ?", (nota_id,))
@@ -195,9 +268,7 @@ class Application():
         if not nota_selecionada:
             messagebox.showwarning("Atenção", "Selecione uma nota para visualizar.")
             return
-        # Obtem o id e o nome do arquivo selecionado na Treeview
         nota_id = self.lista_cad_nota.item(nota_selecionada, "values")[0]
-        # Conecta ao banco para buscar o caminho completo da nota fiscal
         conn = sqlite3.connect(caminho_notas_fiscais)
         cursor = conn.cursor()
         cursor.execute("SELECT caminho FROM notas WHERE id = ?", (nota_id,))
@@ -220,20 +291,16 @@ class Application():
 
 
     def carregar_dados_tela_remover_nota_2(self):
-        # Verifica se há um item selecionado na Treeview
         selected_item = self.lista_excluir_nota.selection()
         if not selected_item:
             messagebox.showwarning("Atenção", "Selecione um equipamento para visualizar suas notas fiscais.")
             return
-        # Obtém o ID do equipamento selecionado
         equipamento_id = self.lista_excluir_nota.item(selected_item, "values")[0]
-        # Consulta o banco de dados para obter as notas fiscais associadas a este equipamento
         conn = sqlite3.connect(caminho_notas_fiscais)
         cursor = conn.cursor()
         cursor.execute("SELECT id, caminho FROM notas WHERE equipamento_id = ?", (equipamento_id,))
         notas = cursor.fetchall()
         conn.close()
-        # Verifica se há notas fiscais para o equipamento
         if not notas:
             messagebox.showinfo("Informação", "Não há notas fiscais vinculadas a este equipamento.")
             self.janela_fiscal_remover_2.destroy()
@@ -248,15 +315,12 @@ class Application():
 
 
     def treeview_tela_eventos_1(self):
-        #Limpa os dados existentes na lista
         for item in self.lista_excluir_nota.get_children():
             self.lista_excluir_nota.delete(item)
-        # Conectando ao banco de dados e buscando os dados
         conn = sqlite3.connect(os.path.join(os.path.expanduser("~"), "Documents", "Estoque_TI", "estoque.db"))
         cursor = conn.cursor()
         cursor.execute("SELECT id, nome, setor, usuario FROM equipamentos")
         registros = cursor.fetchall()
-        # Inserindo os dados na Treeview
         for registro in registros:
             self.lista_excluir_nota.insert("", "end", values=registro)
         conn.close()
@@ -442,7 +506,7 @@ class Application():
                                 command=lambda:self.cancelar(self.janela_fiscal_cad,self.janela_fiscal_visualizar))
         self.bt_cancelar.place(relx=0.10, rely=0.30)
         self.carregar_dados_notas()
-        
+
 
     def tela_visualizar_nota(self):
         largura_tela = self.root.winfo_screenwidth()
@@ -525,20 +589,16 @@ class Application():
 
 
     def carregar_dados_notas(self):
-        # Verifica se há um item selecionado na Treeview
         selected_item = self.lista_excluir_nota.selection()
         if not selected_item:
             messagebox.showwarning("Atenção", "Selecione um equipamento para visualizar suas notas fiscais.")
             return
-        # Obtém o ID do equipamento selecionado
         equipamento_id = self.lista_excluir_nota.item(selected_item, "values")[0]
-        # Consulta o banco de dados para obter as notas fiscais associadas a este equipamento
         conn = sqlite3.connect(caminho_notas_fiscais)
         cursor = conn.cursor()
         cursor.execute("SELECT id, caminho FROM notas WHERE equipamento_id = ?", (equipamento_id,))
         notas = cursor.fetchall()
         conn.close()
-        # Verifica se há notas fiscais para o equipamento
         if not notas:
             messagebox.showinfo("Informação", "Não há notas fiscais vinculadas a este equipamento.")
             self.janela_fiscal_cad.destroy()
@@ -684,53 +744,44 @@ class Application():
         
 
     def pesquisa_id_excluir_notas(self):
-            # Limpar o Treeview
             id_equipamento = self.excluir_id_entry.get()
             if not id_equipamento or id_equipamento.isalpha():
                 messagebox.showwarning("Atenção", "EQUIPAMENTO NÃO ENCONTRADO")
                 return
             for item in self.lista_excluir_nota.get_children():
                 self.lista_excluir_nota.delete(item)
-            # Conectar ao banco de dados e buscar os dados
             conn = sqlite3.connect(os.path.join(os.path.expanduser("~"), "Documents", "Estoque_TI", "estoque.db"))
             cursor = conn.cursor()
             cursor.execute('SELECT id, nome FROM equipamentos WHERE id = ?', (id_equipamento,))
             registros = cursor.fetchall()
-            # Inserir os dados na Treeview
             for registro in registros:
                 self.lista_excluir_nota.insert("", "end", values=registro)
             conn.close()
 
 
     def pesquisa_nome_excluir_notas(self):
-            # Limpar o Treeview
             id_equipamento = self.excluir_nome_entry.get().upper()
             if not id_equipamento or id_equipamento.isnumeric():
                 messagebox.showwarning("Atenção", "EQUIPAMENTO NÃO ENCONTRADO")
                 return
             for item in self.lista_excluir_nota.get_children():
                 self.lista_excluir_nota.delete(item)
-            # Conectar ao banco de dados e buscar os dados
             conn = sqlite3.connect(os.path.join(os.path.expanduser("~"), "Documents", "Estoque_TI", "estoque.db"))
             cursor = conn.cursor()
             cursor.execute("SELECT * FROM equipamentos WHERE nome LIKE ?", ('%' + id_equipamento + '%',))
             registros = cursor.fetchall()
-            # Inserir os dados na Treeview
             for registro in registros:
                 self.lista_excluir_nota.insert("", "end", values=registro)
             conn.close()
 
 
     def carregar_dados_fiscal(self):
-        # Limpa os dados existentes na lista
         for item in self.lista_excluir_nota.get_children():
             self.lista_excluir_nota.delete(item)
-        # Conectando ao banco de dados e buscando os dados
         conn = sqlite3.connect(os.path.join(os.path.expanduser("~"), "Documents", "Estoque_TI", "estoque.db"))
         cursor = conn.cursor()
         cursor.execute("SELECT id, nome, categoria, setor FROM equipamentos")
         registros = cursor.fetchall()
-        # Inserindo os dados na Treeview
         for registro in registros:
             self.lista_excluir_nota.insert("", "end", values=registro)
         self.excluir_id_entry.delete(0, END)
@@ -739,24 +790,18 @@ class Application():
 
 
     def cadastrar_nota(self):
-        # Obtém o item selecionado na Treeview
         item_selecionado = self.lista_excluir_nota.focus()
         if not item_selecionado:
             messagebox.showwarning("Atenção", "Selecione um equipamento na lista para cadastrar a nota fiscal.")
             return
-        # Obtém o ID do equipamento a partir do item selecionado
         equipamento_id = self.lista_excluir_nota.item(item_selecionado, 'values')[0]
-        # Abre o gerenciador de arquivos para selecionar o arquivo PDF
         arquivo_origem = filedialog.askopenfilename(title="Selecione uma nota fiscal (PDF)", filetypes=[("PDF files", "*.pdf")])
         if not arquivo_origem:
             return
-        # Define o caminho de destino para mover o PDF
-        pasta_destino = pasta_banco  # Ajuste `pasta_banco` com o caminho específico da sua pasta de notas fiscais
+        pasta_destino = pasta_banco
         arquivo_destino = os.path.join(pasta_destino, os.path.basename(arquivo_origem))
         try:
-            # Move o arquivo para a pasta de notas fiscais
             shutil.move(arquivo_origem, arquivo_destino)
-            # Conecta ao banco de dados e insere o registro na tabela de notas fiscais
             conn = sqlite3.connect(caminho_notas_fiscais)
             cursor = conn.cursor()
             cursor.execute('''
@@ -975,13 +1020,55 @@ class Application():
         self.carregar_logs_eventos()
 
 
+    def tela_chamado(self):
+        largura_tela = self.root.winfo_screenwidth()
+        altura_tela = self.root.winfo_screenheight()
+        tamanho_tela_str = f"{largura_tela}x{altura_tela}".replace(' ', '')
+        #criação da janela cadastrar nota
+        self.janela_chamado = Toplevel(self.root)
+        self.janela_chamado.title("Sagaz TEC // CHAMADOS")
+        self.janela_chamado.configure(background='#107db2')
+        self.janela_chamado.geometry(tamanho_tela_str)
+        self.janela_chamado.state('zoomed')
+        self.janela_chamado.maxsize(width=largura_tela, height=altura_tela)
+        self.janela_chamado.minsize(width=largura_tela, height=altura_tela)
+        self.janela_chamado.resizable(True, True)
+        #tornando outras janelas não interativas
+        self.janela_chamado.grab_set()
+        #Frame da imagem
+        self.frame_imagem = Frame(self.janela_chamado, bg='#107db2')
+        self.frame_imagem.place(relx= 0.82, rely= 0.04, relwidth= 0.17, relheight=0.34)
+        #imagem
+        rotulo_imagem_alterar = tk.Label(self.frame_imagem, image=self.imagem_tk, bg='#107db2')
+        rotulo_imagem_alterar.place(relx=0.02, rely=0.04)
+        #Frame botoes
+        self.frame_botoes = Frame(self.janela_chamado, bg='lightblue')
+        self.frame_botoes.place(relx= 0.30, rely= 0.15, relwidth= 0.30, relheight=0.70)
+        #Botões
+        #Cadastrar
+        self.bt_fiscal_cadastrar = Button(self.frame_botoes, text='CHAMADOS PENDENTES', borderwidth=5,
+                                        bg='#107db2',fg='white',font=("Arial", 10),
+                                        command=self.tela_chamado_1)
+        self.bt_fiscal_cadastrar.pack(padx=50, pady=50)
+        #Visualizar
+        self.bt_fiscal_visualizar_nota = Button(self.frame_botoes, text='CHAMADOS RESOLVIDOS', borderwidth=5,
+                                        bg='#107db2',fg='white',font=("Arial", 10),
+                                        command=self.tela_chamado_2)
+        self.bt_fiscal_visualizar_nota.pack(padx=50, pady=50)
+        #cancelar
+        self.bt_fiscal_cancelar = Button(self.frame_botoes, text='CANCELAR', borderwidth=5, bg='red',
+                                fg='white',font=("Arial", 10),
+                                command=lambda:self.cancelar(self.janela_chamado, self.root))
+        self.bt_fiscal_cancelar.pack(padx=50, pady=50)
+
+
     def tela_chamado_1(self):
         largura_tela = self.root.winfo_screenwidth()
         altura_tela = self.root.winfo_screenheight()
         tamanho_tela_str = f"{largura_tela}x{altura_tela}".replace(' ', '')
         #criação da janela cadastrar nota
         self.janela_chamado_1 = Toplevel(self.root)
-        self.janela_chamado_1.title("Sagaz TEC // CHAMADOS")
+        self.janela_chamado_1.title("Sagaz TEC // CHAMADOS PENDENTES")
         self.janela_chamado_1.configure(background='#107db2')
         self.janela_chamado_1.geometry(tamanho_tela_str)
         self.janela_chamado_1.state('zoomed')
@@ -996,11 +1083,84 @@ class Application():
         #imagem
         rotulo_imagem_alterar = tk.Label(self.frame_imagem, image=self.imagem_tk, bg='#107db2')
         rotulo_imagem_alterar.place(relx=0.02, rely=0.04)
-        #frame_treeview
+        # Frame da Treeview
         self.frame_treeview = Frame(self.janela_chamado_1, bg='#107db2')
+        self.frame_treeview.place(relx=0.01, rely=0.10, relwidth=0.50, relheight=0.70)
+        # Scrollbar da Treeview
+        self.scrollbar = ttk.Scrollbar(self.frame_treeview, orient="vertical")
+        self.scrollbar.pack(side="right", fill="y")
+        # Treeview
+        self.tree = ttk.Treeview(self.frame_treeview,columns=("Remetente", 
+                                                              "Assunto", "Data"),show="headings",yscrollcommand=self.scrollbar.set)
+        # Configuração das colunas
+        self.tree.heading("Remetente", text="Remetente")
+        self.tree.heading("Assunto", text="Assunto")
+        self.tree.heading("Data", text="Data")
+        self.tree.column("Remetente", width=100, anchor="w")
+        self.tree.column("Assunto", width=200, anchor="w")
+        self.tree.column("Data", width=100, anchor="w")
+        # Posicionamento da Treeview
+        self.tree.pack(side="left", fill="both", expand=True)
+        # Vincula a Scrollbar à Treeview
+        self.scrollbar.config(command=self.tree.yview)
+        # Evento para exibir conteúdo
+        self.tree.bind("<<TreeviewSelect>>", self.exibir_conteudo)
+        #frame conteudo
+        self.frame_mensagens = Frame(self.janela_chamado_1, bg='#107db2')
+        self.frame_mensagens.place(relx=0.52,rely=0.10, relwidth= 0.30, relheight=0.70)
+        #Scroll bar das mensagens
+        self.scrollbar_msg = ttk.Scrollbar(self.frame_mensagens, orient='vertical')
+        #treeview das mensagens
+        self.texto_conteudo = tk.Text(self.frame_mensagens, wrap=tk.WORD, state=tk.DISABLED, yscrollcommand=self.scrollbar_msg.set)
+        self.scrollbar_msg.pack(side="right", fill="y")
+        self.texto_conteudo.pack(fill="both", expand=True)
+        self.scrollbar_msg.config(command=self.texto_conteudo.yview)
+        #frame botoes baixo
+        self.frame_botoes = Frame(self.janela_chamado_1, bd=4, bg='#107db2', highlightbackground='#107db2',highlightthickness=2)
+        self.frame_botoes.place(relx= 0.40, rely= 0.80, relwidth= 0.30, relheight=0.10)
+        #botoes
+        #Resolvido
+        bt_resolvido = Button(self.frame_botoes, text="RESOLVIDO",borderwidth=5, bg='#107db2',fg='white',
+                                 font=("Arial", 10), command=self.marcar_como_resolvido)
+        bt_resolvido.place(relx=0.45, rely=0.30)
+        #Cancelar
+        bt_cancelar = Button(self.frame_botoes, text="CANCELAR",borderwidth=5, bg='red',fg='white',
+                                 font=("Arial", 10), command=lambda:self.cancelar(self.janela_chamado_1, self.janela_chamado))
+        bt_cancelar.place(relx=0.10, rely=0.30)
+        self.carregar_chamados_em_thread()
+    
+
+    def tela_chamado_2(self):
+        largura_tela = self.root.winfo_screenwidth()
+        altura_tela = self.root.winfo_screenheight()
+        tamanho_tela_str = f"{largura_tela}x{altura_tela}".replace(' ', '')
+        #criação da janela
+        self.janela_chamado_2 = Toplevel(self.root)
+        self.janela_chamado_2.title("Sagaz TEC // CHAMADOS RESOLVIDOS")
+        self.janela_chamado_2.configure(background='#107db2')
+        self.janela_chamado_2.geometry(tamanho_tela_str)
+        self.janela_chamado_2.state('zoomed')
+        self.janela_chamado_2.maxsize(width=largura_tela, height=altura_tela)
+        self.janela_chamado_2.minsize(width=largura_tela, height=altura_tela)
+        self.janela_chamado_2.resizable(True, True)
+        #tornando outras janelas não interativas
+        self.janela_chamado_2.grab_set()
+        #Frame da imagem
+        self.frame_imagem = Frame(self.janela_chamado_2, bg='#107db2')
+        self.frame_imagem.place(relx= 0.82, rely= 0.04, relwidth= 0.17, relheight=0.34)
+        #imagem
+        rotulo_imagem_alterar = tk.Label(self.frame_imagem, image=self.imagem_tk, bg='#107db2')
+        rotulo_imagem_alterar.place(relx=0.02, rely=0.04)
+        #frame_treeview
+        self.frame_treeview = Frame(self.janela_chamado_2, bg='#107db2')
         self.frame_treeview.place(relx= 0.01, rely= 0.10, relwidth= 0.50, relheight=0.70)
+        #scrollbar da treeview
+        self.scrollbar = tk.Scrollbar(self.frame_treeview, orient="vertical")
+        self.scrollbar.pack(side="right", fill="y")
         #Treeview
-        self.tree = ttk.Treeview(self.frame_treeview, columns=("Remetente", "Assunto", "Data"), show="headings")
+        self.tree = ttk.Treeview(self.frame_treeview, columns=("Remetente", 
+                                                               "Assunto", 
+                                                               "Data"), show="headings", yscrollcommand=self.scrollbar.set)
         self.tree.heading("Remetente", text="Remetente")
         self.tree.heading("Assunto", text="Assunto")
         self.tree.heading("Data", text="Data")
@@ -1009,24 +1169,30 @@ class Application():
         self.tree.column("Data", width=50)
         self.tree.pack(fill="both", expand=True)
         self.tree.bind("<<TreeviewSelect>>", self.exibir_conteudo)
-        #scrollbar da treeview
-        scrollbar = tk.Scrollbar(self.tree, orient="vertical", command=self.tree.yview)
-        scrollbar.pack(side="right", fill="y")
-        self.tree.configure(yscrollcommand=scrollbar.set)
+        self.scrollbar.config(command=self.tree.yview)
         #frame conteudo
-        self.frame_mensagens = Frame(self.janela_chamado_1, bg='#107db2')
+        self.frame_mensagens = Frame(self.janela_chamado_2, bg='#107db2')
         self.frame_mensagens.place(relx=0.52,rely=0.10, relwidth= 0.30, relheight=0.70)
         #treeview das mensagens
         self.texto_conteudo = tk.Text(self.frame_mensagens, wrap=tk.WORD, state=tk.DISABLED)
         self.texto_conteudo.pack(fill="both", expand=True)
+        #Scroll bar do frame conteudo
+        self.scroll_conteudo = tk.Scrollbar(self.texto_conteudo, orient="vertical", command=self.texto_conteudo.yview)
+        self.scroll_conteudo.pack(side="right", fill="y")
+        self.texto_conteudo.configure(yscrollcommand=self.scroll_conteudo.set)
         #frame botoes baixo
-        self.frame_botoes = Frame(self.janela_chamado_1, bd=4, bg='#107db2', highlightbackground='#107db2',highlightthickness=2)
+        self.frame_botoes = Frame(self.janela_chamado_2, bd=4, bg='#107db2', highlightbackground='#107db2',highlightthickness=2)
         self.frame_botoes.place(relx= 0.40, rely= 0.80, relwidth= 0.30, relheight=0.10)
         #botoes
+        #Excluir
+        bt_excluir = Button(self.frame_botoes, text="MOVER PARA LIXEIRA",borderwidth=5, bg='#107db2',fg='white',
+                                 font=("Arial", 10), command=self.marcar_como_lixo)
+        bt_excluir.place(relx=0.45, rely=0.30)
+        #Cancelar
         bt_cancelar = Button(self.frame_botoes, text="CANCELAR",borderwidth=5, bg='red',fg='white',
-                                 font=("Arial", 10), command=lambda:self.cancelar(self.janela_chamado_1, self.root))
+                                 font=("Arial", 10), command=lambda:self.cancelar(self.janela_chamado_2, self.janela_chamado))
         bt_cancelar.place(relx=0.10, rely=0.30)
-        self.carregar_chamados()
+        self.carregar_resolvidos_em_thread()
 
 
     #características da tela menú inicial
@@ -1051,7 +1217,6 @@ class Application():
         categoria = self.categoria_editar_entry.get().upper()
         key = self.key_editar_entry.get().upper() or 'SEM REGISTRO'
         observacao = self.observacao_editar_entry.get().upper() or 'SEM REGISTRO'
-        # Atualizar no banco de dados
         try:
             conn = sqlite3.connect(caminho_do_banco)
             cursor = conn.cursor()
@@ -1072,15 +1237,12 @@ class Application():
 
 
     def carregar_dados(self):
-        # Limpa os dados existentes na lista
         for item in self.listaequip.get_children():
             self.listaequip.delete(item)
-        # Conectando ao banco de dados e buscando os dados
         conn = sqlite3.connect(os.path.join(os.path.expanduser("~"), "Documents", "Estoque_TI", "estoque.db"))
         cursor = conn.cursor()
         cursor.execute("SELECT id, nome, categoria, setor, usuario FROM equipamentos")
         registros = cursor.fetchall()
-        # Inserindo os dados na Treeview
         for registro in registros:
             self.listaequip.insert("", "end", values=registro)
         conn.close()
@@ -1179,9 +1341,7 @@ class Application():
                 cursor.execute("DELETE FROM equipamentos WHERE id = ?", (id_equipamento,))
                 conn.commit()
                 conn.close()
-                # Excluir item da self.lista_excluir
                 self.lista_excluir.delete(selecionado)
-                # Excluir item da self.listaequip
                 for item in self.listaequip.get_children():
                     if self.listaequip.item(item, 'values')[0] == id_equipamento:
                         self.listaequip.delete(item)
@@ -1280,15 +1440,12 @@ class Application():
 
     def carregar_dados_alteracao(self):
         """Carrega os dados dos equipamentos para a janela de alteração."""
-        # Limpar o Treeview
         for item in self.lista_alterar.get_children():
             self.lista_alterar.delete(item)
-        # Conectar ao banco de dados e buscar os dados
         conn = sqlite3.connect(os.path.join(os.path.expanduser("~"), "Documents", "Estoque_TI", "estoque.db"))
         cursor = conn.cursor()
         cursor.execute("SELECT id, nome, setor,usuario, componentes, categoria, key, observacao  FROM equipamentos")
         registros = cursor.fetchall()
-        # Inserir os dados na Treeview
         for registro in registros:
             self.lista_alterar.insert("", "end", values=registro)
         conn.close()
@@ -1298,15 +1455,12 @@ class Application():
 
     def carregar_dados_exclusao(self):
             """Carrega os dados dos equipamentos para a janela de alteração."""
-            # Limpar o Treeview
             for item in self.lista_excluir.get_children():
                 self.lista_excluir.delete(item)
-            # Conectar ao banco de dados e buscar os dados
             conn = sqlite3.connect(os.path.join(os.path.expanduser("~"), "Documents", "Estoque_TI", "estoque.db"))
             cursor = conn.cursor()
             cursor.execute("SELECT id, nome FROM equipamentos")
             registros = cursor.fetchall()
-            # Inserir os dados na Treeview
             for registro in registros:
                 self.lista_excluir.insert("", "end", values=registro)
             conn.close()
@@ -1315,92 +1469,78 @@ class Application():
 
 
     def pesquisa_id_excluir(self):
-        # Limpar o Treeview
         id_equipamento = self.excluir_id_entry.get()
         if not id_equipamento or id_equipamento.isalpha():
             messagebox.showwarning("Atenção", "EQUIPAMENTO NÃO ENCONTRADO")
             return
         for item in self.lista_excluir.get_children():
             self.lista_excluir.delete(item)
-        # Conectar ao banco de dados e buscar os dados
         conn = sqlite3.connect(os.path.join(os.path.expanduser("~"), "Documents", "Estoque_TI", "estoque.db"))
         cursor = conn.cursor()
         cursor.execute('SELECT id, nome FROM equipamentos WHERE id = ?', (id_equipamento,))
         registros = cursor.fetchall()
-        # Inserir os dados na Treeview
         for registro in registros:
             self.lista_excluir.insert("", "end", values=registro)
         conn.close()
 
-
+    
     def pesquisa_nome_excluir(self):
-        # Limpar o Treeview
         id_equipamento = self.excluir_nome_entry.get().upper()
         if not id_equipamento or id_equipamento.isnumeric():
             messagebox.showwarning("Atenção", "EQUIPAMENTO NÃO ENCONTRADO")
             return
         for item in self.lista_excluir.get_children():
             self.lista_excluir.delete(item)
-        # Conectar ao banco de dados e buscar os dados
         conn = sqlite3.connect(os.path.join(os.path.expanduser("~"), "Documents", "Estoque_TI", "estoque.db"))
         cursor = conn.cursor()
         cursor.execute("SELECT * FROM equipamentos WHERE nome LIKE ?", ('%' + id_equipamento + '%',))
         registros = cursor.fetchall()
-        # Inserir os dados na Treeview
         for registro in registros:
             self.lista_excluir.insert("", "end", values=registro)
         conn.close()
 
-
+    #Função para o filtro de pesquisa por ID
     def pesquisa_id_alterar(self):
-        # Limpar o Treeview
         id_equipamento = self.lb_alterar_id_entry.get()
         if not id_equipamento or id_equipamento.isalpha():
             messagebox.showwarning("Atenção", "EQUIPAMENTO NÃO ENCONTRADO")
             return
         for item in self.lista_alterar.get_children():
             self.lista_alterar.delete(item)
-        # Conectar ao banco de dados e buscar os dados
         conn = sqlite3.connect(os.path.join(os.path.expanduser("~"), "Documents", "Estoque_TI", "estoque.db"))
         cursor = conn.cursor()
         cursor.execute('SELECT id, nome FROM equipamentos WHERE id = ?', (id_equipamento,))
         registros = cursor.fetchall()
-        # Inserir os dados na Treeview
         for registro in registros:
             self.lista_alterar.insert("", "end", values=registro)
         conn.close()
 
-
+    #Função para o filtro de pesquisa por nome
     def pesquisa_nome_alterar(self):
-        # Limpar o Treeview
         id_equipamento = self.lb_alterar_nome_entry.get()
         if not id_equipamento or id_equipamento.isnumeric():
             messagebox.showwarning("Atenção", "EQUIPAMENTO NÃO ENCONTRADO")
             return
         for item in self.lista_alterar.get_children():
             self.lista_alterar.delete(item)
-        # Conectar ao banco de dados e buscar os dados
         conn = sqlite3.connect(os.path.join(os.path.expanduser("~"), "Documents", "Estoque_TI", "estoque.db"))
         cursor = conn.cursor()
         cursor.execute("SELECT id, nome FROM equipamentos WHERE nome LIKE ?", ('%' + id_equipamento + '%',))
         registros = cursor.fetchall()
-        # Inserir os dados na Treeview
         for registro in registros:
             self.lista_alterar.insert("", "end", values=registro)
         conn.close()
 
-
+    #Tela de editar equipamento
     def editar_equipamento(self):
         largura_tela = self.root.winfo_screenwidth()
         altura_tela = self.root.winfo_screenheight()
         tamanho_tela_str = f"{int(largura_tela)}x{int(altura_tela)}"
         """Função que abre uma janela de edição para o equipamento selecionado."""
-        # Verificar se algum item foi selecionado
         selecionado = self.lista_alterar.selection()
         if not selecionado:
             messagebox.showwarning("Atenção", "Selecione um equipamento para editar!")
             return
-        # Obter os valores do item selecionado
         item = self.lista_alterar.item(selecionado)
         equipamento_id = item['values'][0]
         nome = item['values'][1]
@@ -1485,7 +1625,6 @@ class Application():
 
     #função para cadastrar na tela de cadastrar
     def cadastrar(self):
-        # Captura as informações dos campos
         nome = self.nome_entry.get().upper()
         categoria = self.categoria_entry.get().upper()
         setor = self.setor_entry.get().upper() or 'NÂO REGISTRADO'
@@ -1528,10 +1667,8 @@ class Application():
 
     #criando a função para visualização dos dados no frame2
     def frame_de_tela(self):
-        #Abaixo a criação do primeiro frame:
         self.frame1 = Frame(self.root, bd=4, bg='white', highlightbackground='#98F5FF',highlightthickness=2)
         self.frame1.place(relx= 0.02, rely= 0.02, relwidth= 0.96, relheight=0.46)
-        #Abaixo a criação do segundo frame:
         self.frame2 = Frame(self.root, bd=4, bg='white', highlightbackground='#98F5FF', highlightthickness=2)
         self.frame2.place(relx= 0.02, rely= 0.5, relwidth= 0.96, relheight=0.46)
 
@@ -1557,7 +1694,7 @@ class Application():
         self.bt_fiscal.place(relx=0.01, rely=0.45, relwidth=0.15, relheight=0.10)
         #botão de chamados
         self.bt_chamado = Button(self.frame1, text='CHAMADOS',borderwidth=5,bg='#107db2',fg='white',
-                                font=("Arial", 10), command=self.tela_chamado_1)
+                                font=("Arial", 10), command=self.tela_chamado)
         self.bt_chamado.place(relx=0.01, rely=0.60, relwidth=0.15, relheight=0.10)
         #botão de eventos
         self.bt_eventos = Button(self.frame1, text='LOG DE EVENTOS',borderwidth=5,bg='#107db2',fg='white',

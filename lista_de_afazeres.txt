@@ -1,0 +1,9 @@
+1- Configurar o botão de alterar equipamento(FINALIZADO)
+
+2- Configurar o botão de excluir equipamento(FINALIZADO)
+
+3- Configurar o botão de vincular nota fiscal(FINALIZADO)
+
+4- Criar o botão de pesquisar equipamento(DESNESCESSÁRIO)
+
+5- Configurar o botão de pesquisa equipamento(DESNESCESSÁRIO)
