@@ -10,6 +10,7 @@ import shutil
 from PIL import Image, ImageTk
 import win32evtlog
 import threading
+import json
 
 pasta_banco = os.path.join(os.path.expanduser("~"), "Documents", "Estoque_TI")
 caminho_do_banco = os.path.join(pasta_banco, "estoque.db")
@@ -17,6 +18,11 @@ caminho_notas_fiscais = os.path.join(pasta_banco, "notas_fiscais.db")
 if not os.path.exists(pasta_banco):
     os.makedirs(pasta_banco)
 root = Tk()
+with open('credenciais.json', 'r') as file:
+    credenciais = json.load(file)
+EMAIL = credenciais.get('email')
+PASSWORD = credenciais.get('senha')
+SERVER = "imap.gmail.com"
 
 
 #criando o arquivo do banco de dados
@@ -53,11 +59,32 @@ class Application():
         self.root = root
         self.imagem = Image.open("sagaztec.png")
         self.imagem_tk = ImageTk.PhotoImage(self.imagem)
+        self.conexao_imap = None
+        self.mensagens_dict = {}
         self.tela()
         self.frame_de_tela()
         self.widgets_frame1()
         self.lista_frame2()
+        self.conectar_imap()
         root.mainloop()
+
+
+    def conectar_imap(self):
+        try:
+            self.conexao_imap = IMAPClient(SERVER, ssl=True)
+            self.conexao_imap.login(EMAIL, PASSWORD)
+        except Exception as e:
+            messagebox.showerror("Erro", f"Erro ao conectar ao servidor IMAP.\n{str(e)}")
+
+
+    def reconectar_imap(self):
+            if not self.conexao_imap or not self.conexao_imap.has_capability("IMAP4rev1"):
+                self.conectar_imap()
+
+
+    def desconectar_imap(self):
+        if self.conexao_imap:
+            self.conexao_imap.logout()
 
 
     def marcar_como_lixo(self):
@@ -67,13 +94,8 @@ class Application():
                 messagebox.showwarning("Atenção", "Selecione um e-mail para marcar como Lixo.")
                 return
             uid = int(item_selecionado)
-            EMAIL = "robsonluissagaz@gmail.com"
-            PASSWORD = "bglm wtar tswo atyy"
-            SERVER = "imap.gmail.com"
-            with IMAPClient(SERVER, ssl=True) as mail_client:
-                mail_client.login(EMAIL, PASSWORD)
-                mail_client.select_folder("Resolvidos")
-                mail_client.move([uid], "Lixeira")
+            self.conexao_imap.select_folder("Resolvidos")
+            self.conexao_.move([uid], "Lixeira")
             self.tree.delete(item_selecionado)
             del self.mensagens_dict[str(uid)]
             self.texto_conteudo.configure(state=tk.NORMAL)
@@ -82,30 +104,6 @@ class Application():
             messagebox.showinfo("Sucesso", "O e-mail foi movido para 'Lixeira'.")
         except Exception as e:
             messagebox.showerror("Erro", f"Não foi possível mover o e-mail para 'Lixeira'.\n{str(e)}")
-
-
-    def marcar_como_resolvido(self):
-        try:
-            item_selecionado = self.tree.focus()
-            if not item_selecionado:
-                messagebox.showwarning("Atenção", "Selecione um e-mail para marcar como resolvido.")
-                return
-            uid = int(item_selecionado)
-            EMAIL = "robsonluissagaz@gmail.com"
-            PASSWORD = "bglm wtar tswo atyy"
-            SERVER = "imap.gmail.com"
-            with IMAPClient(SERVER, ssl=True) as mail_client:
-                mail_client.login(EMAIL, PASSWORD)
-                mail_client.select_folder("Chamados")
-                mail_client.move([uid], "Resolvidos")
-            self.tree.delete(item_selecionado)
-            del self.mensagens_dict[str(uid)]
-            self.texto_conteudo.configure(state=tk.NORMAL)
-            self.texto_conteudo.delete("1.0", tk.END)
-            self.texto_conteudo.configure(state=tk.DISABLED)
-            messagebox.showinfo("Sucesso", "O e-mail foi movido para 'Resolvidos'.")
-        except Exception as e:
-            messagebox.showerror("Erro", f"Não foi possível mover o e-mail para 'Resolvidos'.\n{str(e)}")
 
 
     def exibir_conteudo(self, event):
@@ -127,75 +125,78 @@ class Application():
 
     def carregar_chamados(self):
         try:
-            EMAIL = "robsonluissagaz@gmail.com"
-            PASSWORD = "bglm wtar tswo atyy"
-            SERVER = "imap.gmail.com"
-            with IMAPClient(SERVER, ssl=True) as mail_client:
-                mail_client.login(EMAIL, PASSWORD)
-                mail_client.select_folder("Chamados", readonly=True)
-                mensagens = mail_client.search(["ALL"])
-                self.mensagens_dict = {}
-                for item in self.tree.get_children():
-                    self.tree.delete(item)
-                for uid in mensagens:
-                    mensagem_raw = mail_client.fetch([uid], ["BODY[]", "FLAGS"])
-                    mensagem = pyzmail.PyzMessage.factory(mensagem_raw[uid][b"BODY[]"])
-                    remetente = mensagem.get_address("from")[1]
-                    assunto = mensagem.get_subject() or "Sem Assunto"
-                    data = mensagem.get_decoded_header("date")
-                    conteudo = "Sem conteúdo disponível"
-                    if mensagem.text_part:
-                        try:
-                            conteudo = mensagem.text_part.get_payload().decode(mensagem.text_part.charset)
-                        except Exception:
-                            conteudo = "Erro ao decodificar o conteúdo."
-                    self.mensagens_dict[f"{uid}"] = {
-                        "remetente": remetente,
-                        "assunto": assunto,
-                        "conteudo": conteudo,
-                        "data": data,}
-                    self.tree.insert("", "end", iid=uid, values=(remetente, assunto, data))
+            self.conexao_imap.select_folder("Chamados", readonly=True)
+            mensagens = self.conexao_imap.search(["ALL"])
+            for item in self.tree.get_children():
+                self.tree.delete(item)
+            for uid in mensagens:
+                mensagem_raw = self.conexao_imap.fetch([uid], ["BODY[]", "FLAGS"])
+                mensagem = pyzmail.PyzMessage.factory(mensagem_raw[uid][b"BODY[]"])
+                remetente = mensagem.get_address("from")[1]
+                assunto = mensagem.get_subject() or "Sem Assunto"
+                data = mensagem.get_decoded_header("date")
+                conteudo = mensagem.text_part.get_payload().decode(mensagem.text_part.charset) if mensagem.text_part else "Sem conteúdo disponível"
+                self.mensagens_dict[f"{uid}"] = {
+                    "remetente": remetente,
+                    "assunto": assunto,
+                    "conteudo": conteudo,
+                    "data": data,}
+                self.tree.insert("", "end", iid=uid, values=(remetente, assunto, data))
         except Exception as e:
             messagebox.showerror("Erro", f"Não foi possível carregar os chamados.\n{str(e)}")
-    
+
+
+    def marcar_como_resolvido(self):
+        try:
+            item_selecionado = self.tree.focus()
+            if not item_selecionado:
+                messagebox.showwarning("Atenção", "Selecione um e-mail para marcar como resolvido.")
+                return
+            uid = int(item_selecionado)
+            self.reconectar_imap()
+            self.conexao_imap.select_folder("Chamados")
+            self.conexao_imap.move([uid], "Resolvidos")
+            self.tree.delete(item_selecionado)
+            del self.mensagens_dict[str(uid)]
+            self.texto_conteudo.configure(state=tk.NORMAL)
+            self.texto_conteudo.delete("1.0", tk.END)
+            self.texto_conteudo.configure(state=tk.DISABLED)
+            messagebox.showinfo("Sucesso", "O e-mail foi movido para 'Resolvidos'.")
+        except Exception as e:
+            messagebox.showerror("Erro", f"Não foi possível mover o e-mail para 'Resolvidos'.\n{str(e)}")
+
 
     def carregar_chamados_resolvidos(self):
         try:
-            EMAIL = "robsonluissagaz@gmail.com"
-            PASSWORD = "bglm wtar tswo atyy"
-            SERVER = "imap.gmail.com"
-            with IMAPClient(SERVER, ssl=True) as mail_client:
-                mail_client.login(EMAIL, PASSWORD)
-                mail_client.select_folder("Resolvidos", readonly=True)
-                mensagens = mail_client.search(["ALL"])
-                self.mensagens_dict = {}
-                for item in self.tree.get_children():
-                    self.tree.delete(item)
-                for uid in mensagens:
-                    mensagem_raw = mail_client.fetch([uid], ["BODY[]", "FLAGS"])
-                    mensagem = pyzmail.PyzMessage.factory(mensagem_raw[uid][b"BODY[]"])
-                    remetente = mensagem.get_address("from")[1]
-                    assunto = mensagem.get_subject() or "Sem Assunto"
-                    data = mensagem.get_decoded_header("date")
-                    conteudo = "Sem conteúdo disponível"
-                    if mensagem.text_part:
-                        try:
-                            conteudo = mensagem.text_part.get_payload().decode(mensagem.text_part.charset)
-                        except Exception:
-                            conteudo = "Erro ao decodificar o conteúdo."
-                    self.mensagens_dict[f"{uid}"] = {
-                        "remetente": remetente,
-                        "assunto": assunto,
-                        "conteudo": conteudo,
-                        "data": data,}
-                    self.tree.insert("", "end", iid=uid, values=(remetente, assunto, data))
+            self.conexao_imap.select_folder("Resolvidos", readonly=True)
+            mensagens = self.conexao_imap.search(["ALL"])
+            for item in self.tree.get_children():
+                self.tree.delete(item)
+            for uid in mensagens:
+                mensagem_raw = self.conexao_imap.fetch([uid], ["BODY[]", "FLAGS"])
+                mensagem = pyzmail.PyzMessage.factory(mensagem_raw[uid][b"BODY[]"])
+                remetente = mensagem.get_address("from")[1]
+                assunto = mensagem.get_subject() or "Sem Assunto"
+                data = mensagem.get_decoded_header("date")
+                conteudo = "Sem conteúdo disponível"
+                if mensagem.text_part:
+                    try:
+                        conteudo = mensagem.text_part.get_payload().decode(mensagem.text_part.charset)
+                    except Exception:
+                        conteudo = "Erro ao decodificar o conteúdo."
+                self.mensagens_dict[f"{uid}"] = {
+                    "remetente": remetente,
+                    "assunto": assunto,
+                    "conteudo": conteudo,
+                    "data": data,}
+                self.tree.insert("", "end", iid=uid, values=(remetente, assunto, data))
         except Exception as e:
             messagebox.showerror("Erro", f"Não foi possível carregar os chamados.\n{str(e)}")
 
 
     def carregar_chamados_em_thread(self):
         threading.Thread(target=self.carregar_chamados, daemon=True).start()
-    
+
 
     def carregar_resolvidos_em_thread(self):
         threading.Thread(target=self.carregar_chamados_resolvidos, daemon=True).start()
@@ -971,7 +972,7 @@ class Application():
         bt_reseta_treeview.pack(padx=40,pady=40)
         #botão Cadastrar nota selecionado
         bt_nota_selecionado = Button(self.frame_botoes, text="VISUALIZAR EVENTOS",
-                                        borderwidth=5,bg='#107db2',fg='white',font=("Arial", 10), command=self.tela_eventos_2)
+                                        borderwidth=5,bg='#107db2',fg='white',font=("Arial", 10), command=self.ver_eventos)
         bt_nota_selecionado.place(relx=0.53, rely=0.30)
         #Botão cancelar
         bt_cancelar = Button(self.frame_botoes, text="CANCELAR",borderwidth=5, bg='red',fg='white',
@@ -1127,7 +1128,7 @@ class Application():
         bt_cancelar = Button(self.frame_botoes, text="CANCELAR",borderwidth=5, bg='red',fg='white',
                                  font=("Arial", 10), command=lambda:self.cancelar(self.janela_chamado_1, self.janela_chamado))
         bt_cancelar.place(relx=0.10, rely=0.30)
-        self.carregar_chamados_em_thread()
+        self.carregar_chamados()
     
 
     def tela_chamado_2(self):
@@ -1192,7 +1193,7 @@ class Application():
         bt_cancelar = Button(self.frame_botoes, text="CANCELAR",borderwidth=5, bg='red',fg='white',
                                  font=("Arial", 10), command=lambda:self.cancelar(self.janela_chamado_2, self.janela_chamado))
         bt_cancelar.place(relx=0.10, rely=0.30)
-        self.carregar_resolvidos_em_thread()
+        self.carregar_chamados_resolvidos()
 
 
     #características da tela menú inicial
@@ -1421,9 +1422,7 @@ class Application():
         # Adicionar barra de rolagem
         scroll_vertical = Scrollbar(self.lista_alterar, orient='vertical', command=self.lista_alterar.yview)
         scroll_vertical.pack(side='right', fill='y')
-        scroll_horizontal = Scrollbar(self.lista_alterar, orient='horizontal', command=self.lista_alterar.xview)
-        scroll_horizontal.pack(side='bottom', fill='x')
-        self.lista_alterar.configure(yscrollcommand=scroll_vertical.set, xscrollcommand=scroll_horizontal.set)
+        self.lista_alterar.configure(yscrollcommand=scroll_vertical.set)
         # Carregar dados na Treeview
         self.carregar_dados_alteracao()
         #frame_botoes1
